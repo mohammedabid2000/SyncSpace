@@ -5,7 +5,8 @@
   --font-serif: "Times New Roman", Times, serif;                /* italic accents */
 
   --color-background: #F4F0E8;       /* cream: page background */
-  --color-hero-blush: #F3D9D6;       /* soft blush: curved hero background */
+  --color-hero-blush: #EDC6C2;       /* deeper blush makes the hero curve visible */
+  --color-navy-light: #D5DEE8;       /* light navy: second curved section */
   --color-surface: #A8C686;          /* logo white: cards, panels */
   --color-border: #E2DBCE;           /* borders, dividers */
   --color-foreground: #000000;       /* black: main text */
@@ -22,6 +23,63 @@ body {
   @apply bg-background text-foreground;
 }
 
+/* Shared layout for all three illustrated sections. */
+.section-layout {
+  display: grid;
+  align-items: center;
+  gap: 3rem;
+  max-width: 72rem;
+  margin-inline: auto;
+}
+
+.section-layout > * {
+  min-width: 0;
+}
+
+.section-media {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 4 / 3;
+  width: 100%;
+}
+
+.section-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 0.75rem;
+  box-shadow: 0 12px 24px -10px rgb(13 36 52 / 25%);
+}
+
+.section-image-ticket {
+  border-radius: 0;
+  box-shadow: none;
+  filter: drop-shadow(0 12px 12px rgb(13 36 52 / 15%));
+}
+
+.section-connector {
+  display: none;
+  position: absolute;
+  pointer-events: none;
+  left: calc(50% - 1.5rem);
+  top: 35%;
+  width: 3rem;
+  z-index: 20;
+}
+
+@media (min-width: 48rem) {
+  .section-layout {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .section-connector {
+    display: block;
+  }
+}
+
 .hero {
   position: relative;
   isolation: isolate;
@@ -31,12 +89,57 @@ body {
   content: "";
   position: absolute;
   inset: 0;
+  z-index: 0;
+  pointer-events: none;
+
+  background: linear-gradient(
+    to bottom,
+    var(--color-background) 0%,
+    var(--color-hero-blush) 75%
+  );
+
+  border-bottom-right-radius: 55% 45%;
+}
+
+/* Second curved section: same idea as .hero, mirrored (curve on the bottom-left) */
+.curve-navy {
+  position: relative;
+  isolation: isolate;
+}
+
+.curve-navy::before {
+  content: "";
+  position: absolute;
+  inset: 0;
   z-index: -1;
   pointer-events: none;
+
   background: linear-gradient(
-    160deg,
-    var(--color-background) 20%,
-    var(--color-hero-blush) 100%
+    to bottom,
+    var(--color-background) 0%,
+    var(--color-navy-light) 75%
   );
+
+  border-bottom-left-radius: 55% 45%;
+}
+/* Curve for the surface */
+.curve-surface {
+  position: relative;
+  isolation: isolate;
+}
+
+.curve-surface::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+
+  background: linear-gradient(
+    to bottom,
+    var(--color-background) 0%,
+    var(--color-hero-blush) 75%
+  );
+
   border-bottom-right-radius: 55% 45%;
 }
