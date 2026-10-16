@@ -23,7 +23,7 @@ body {
   @apply bg-background text-foreground;
 }
 
-/* Shared layout for all three illustrated sections. */
+/* Shared columns for the illustrated sections. */
 .section-layout {
   display: grid;
   align-items: center;
@@ -60,22 +60,74 @@ body {
   filter: drop-shadow(0 12px 12px rgb(13 36 52 / 15%));
 }
 
-.section-connector {
-  display: none;
-  position: absolute;
-  pointer-events: none;
-  left: calc(50% - 1.5rem);
-  top: 35%;
-  width: 3rem;
-  z-index: 20;
-}
-
 @media (min-width: 48rem) {
   .section-layout {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+}
 
-  .section-connector {
+/* Closing invitation follows the cream ticket mockup. */
+.invitation {
+  padding-block: clamp(3rem, 6vw, 6rem);
+}
+
+.invitation-art {
+  position: relative;
+}
+
+.invitation-connector {
+  display: none;
+  position: absolute;
+  left: 84%;
+  top: 14%;
+  width: calc(16% + 2rem);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.invitation-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1.75rem;
+}
+
+.invitation-title {
+  font-size: clamp(2.25rem, 4.4vw, 4rem);
+  font-weight: 400;
+  line-height: 1.08;
+  letter-spacing: -0.035em;
+}
+
+.invitation-title .font-serif {
+  font-size: 1.12em;
+  letter-spacing: -0.025em;
+}
+
+.invitation-description {
+  max-width: 25rem;
+  font-size: clamp(1.125rem, 1.8vw, 1.5rem);
+  line-height: 1.5;
+}
+
+.invitation-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.875rem;
+  padding: 1rem 2rem;
+  border-radius: 0.75rem;
+  font-size: 1.25rem;
+  cursor: pointer;
+}
+
+.invitation-note {
+  font-size: 1rem;
+  margin-top: -0.75rem;
+}
+
+@media (min-width: 64rem) {
+  .invitation-connector {
     display: block;
   }
 }
@@ -122,7 +174,7 @@ body {
 
   border-bottom-left-radius: 55% 45%;
 }
-/* Curve for the surface */
+
 .curve-surface {
   position: relative;
   isolation: isolate;

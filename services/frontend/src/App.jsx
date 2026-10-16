@@ -124,7 +124,7 @@ function App() {
               <h2 className="text-3xl font-normal tracking-tight text-secondary md:text-5xl">
                 React to moments <span className="font-serif italic text-primary">together.</span>
               </h2>
-              <p className="max-w-md text-lg text-secondary">
+              <p  className="text-lg text-muted">
                 Chat, laugh, and share the best scenes with your friends in real time.
               </p>
             </div>
@@ -147,57 +147,50 @@ function App() {
           </div>
         </section>
             
-        {/* THIRD CURVED SECTION — image LEFT, text RIGHT, joined by a curved line */}
+        {/* Movie-night invit+ation: cream canvas and a connector anchored to the ticket. */}
         <section className="curve-surface px-6 py-16">
-          {/* Shared columns and spacing match the other image-and-text sections. */}
-          <div className="relative section-layout">
-            {/* Decorative connector stays within the desktop column gap. */}
-            <svg
-              viewBox="0 0 48 80"
-              fill="none"
-              aria-hidden="true"
-              className="section-connector text-primary"
-            >
-              <path
-                d="M 4 12 C 28 12, 20 64, 44 64"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeDasharray="4 4"
-              />
-              <circle cx="4" cy="12" r="3" fill="currentColor" />
-              <circle cx="44" cy="64" r="3" fill="currentColor" />
-            </svg>
-
-            {/* 1st child → LEFT column: image */}
-            <div className="section-media">
+          <div className="section-layout invitation-layout">
+            <div className="section-media invitation-art">
               <img
                 src={startnow}
                 alt="Friends getting ready to watch a movie together"
                 className="section-image section-image-ticket"
               />
+              <svg
+                viewBox="0 0 200 160"
+                fill="none"
+                aria-hidden="true"
+                className="invitation-connector text-primary"
+              >
+                <path
+                  d="M 8 15 C 125 -5, 75 145, 192 145"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  vectorEffect="non-scaling-stroke"
+                />
+                <circle cx="8" cy="15" r="4" fill="currentColor" />
+                <circle cx="192" cy="145" r="4" fill="currentColor" />
+              </svg>
             </div>
 
-            {/* 2nd child → RIGHT column: text */}
-            <div className="flex flex-col items-start gap-6">
-              <h2 className="text-4xl font-normal md:text-6xl">
-                <span className="block tracking-tight text-secondary">Save a seat for</span>
+            <div className="invitation-copy">
+              <h2 id="invitation-title" className="invitation-title text-secondary">
+                <span className="block">Save a seat for</span>
                 <span className="block font-serif italic text-primary">your people.</span>
               </h2>
-
-              <p className="text-lg text-muted">
-                Bring your friends together, enjoy videos in sync, and start now.
+              <p className="invitation-description text-secondary">
+                Bring your friends together for the next great scene.
               </p>
-
-              <button className="flex items-center gap-2 rounded-md bg-secondary py-3 pl-5 pr-6 text-base leading-none tracking-tight text-white hover:bg-primary-hover">
-                <TvMinimalPlay className="size-5" aria-hidden="true" />
-                Get Started
+              <button className="invitation-button bg-secondary text-white hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-secondary">
+                <TvMinimalPlay className="size-6" aria-hidden="true" />
+                Get started
               </button>
             </div>
           </div>
         </section>
       </main>
-        <div className="py-24" />
+      <div className="py-8"></div>
       <footer className="bg-secondary px-6 py-12 text-white">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 text-sm md:flex-row">
           <p>&copy; 2026 SyncSpace. All rights reserved.</p>
