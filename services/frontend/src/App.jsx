@@ -2,6 +2,7 @@ import { Globe, Cast, Link, MessagesCircle, RefreshCw, ListPlus, TvMinimalPlay }
 import imghero from "./assets/hero.webp";
 import image from "./assets/image.webp";
 import startnow from "./assets/gsnow.webp";
+import { useNavigate } from "react-router";
 
 const features = [
   {
@@ -40,6 +41,12 @@ const features2 = [
 ];
 
 function App() {
+
+  const navigate = useNavigate();
+
+  function handleClick() {
+    navigate("/SignIn");
+  }
   return (
     <div className="min-h-screen">
 
@@ -56,7 +63,7 @@ function App() {
           </span>
         </div>
 
-        <button className="flex items-center gap-2 rounded-md bg-secondary py-2 pl-3 pr-4 text-sm leading-none font-normal tracking-tight text-white hover:bg-primary-hover md:text-base">
+        <button onClick={handleClick} className="flex items-center gap-2 rounded-md bg-secondary py-2 pl-3 pr-4 text-sm leading-none font-normal tracking-tight text-white hover:bg-primary-hover md:text-base">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-5" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75" />
           </svg>
@@ -74,7 +81,7 @@ function App() {
                 <span className="block font-serif italic text-primary">Your screen.</span>
               </h1>
 
-              <p className="text-lg text-muted">
+              <p className="text-lg text-muted-foreground">
                 Start a room, invite your friends, and enjoy videos in sync.
               </p>
 
@@ -105,7 +112,7 @@ function App() {
                 <h3 className="text-lg font-bold uppercase tracking-widest text-secondary">
                   {feature.title}
                 </h3>
-                <p className="text-muted">{feature.text}</p>
+                <p className="text-muted-foreground">{feature.text}</p>
               </div>
             ))}
           </div>
@@ -124,7 +131,7 @@ function App() {
               <h2 className="text-3xl font-normal tracking-tight text-secondary md:text-5xl">
                 React to moments <span className="font-serif italic text-primary">together.</span>
               </h2>
-              <p  className="text-lg text-muted">
+              <p  className="text-lg text-muted-foreground">
                 Chat, laugh, and share the best scenes with your friends in real time.
               </p>
             </div>
@@ -141,7 +148,7 @@ function App() {
                 <h3 className="text-lg font-bold uppercase tracking-widest text-secondary">
                   {features2.title}
                 </h3>
-                <p className="text-muted">{features2.text}</p>
+                <p className="text-muted-foreground">{features2.text}</p>
               </div>
             ))}
           </div>
