@@ -1,4 +1,4 @@
-import { Globe, Cast, Link, MessagesCircle, RefreshCw, ListPlus, TvMinimalPlay } from "lucide-react";
+import { Globe, Cast, Link, MessagesCircle, RefreshCw, ListPlus, TvMinimalPlay, Plus } from "lucide-react";
 import imghero from "./assets/hero.webp";
 import image from "./assets/image.webp";
 import startnow from "./assets/gsnow.webp";
@@ -45,7 +45,7 @@ function App() {
   const navigate = useNavigate();
 
   function handleClick() {
-    navigate("/SignIn");
+    navigate("/signin");
   }
   return (
     <div className="min-h-screen">
@@ -63,13 +63,15 @@ function App() {
           </span>
         </div>
 
-        <button onClick={handleClick} className="flex items-center gap-2 rounded-md bg-secondary py-2 pl-3 pr-4 text-sm leading-none font-normal tracking-tight text-white hover:bg-primary-hover md:text-base">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-5" aria-hidden="true">
+        {/* Sign in button — hidden for now (commented out). Remove the comment to bring it back.
+        <button type="button" onClick={handleClick} className="invitation-button bg-secondary text-white hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-secondary">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-6" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75" />
           </svg>
 
           Sign in
         </button>
+        */}
       </header>
 
       <main>
@@ -85,10 +87,8 @@ function App() {
                 Start a room, invite your friends, and enjoy videos in sync.
               </p>
 
-              <button className="flex items-center gap-2 rounded-md bg-secondary py-3 pl-5 pr-6 text-base leading-none tracking-tight text-white hover:bg-primary-hover">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="size-5" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                </svg>
+              <button type="button" onClick={handleClick} className="invitation-button bg-secondary text-white hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-secondary">
+                <Plus className="size-6" aria-hidden="true" />
                 New Room
               </button>
             </div>
@@ -189,7 +189,7 @@ function App() {
               <p className="invitation-description text-secondary">
                 Bring your friends together for the next great scene.
               </p>
-              <button className="invitation-button bg-secondary text-white hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-secondary">
+              <button type="button" onClick={handleClick} className="invitation-button bg-secondary text-white hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-secondary">
                 <TvMinimalPlay className="size-6" aria-hidden="true" />
                 Get started
               </button>
