@@ -135,9 +135,11 @@ function SignUp() {
 
             {/* Sign Up = submit the form (create the account) */}
             <button
+              onClick={() => navigate("/home")}
               type="submit"
               className="mt-2 w-full rounded-md bg-secondary py-3 text-sm font-medium text-white hover:bg-secondary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
             >
+            
               Connect
             </button>
 
