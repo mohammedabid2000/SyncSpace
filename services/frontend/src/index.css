@@ -19,6 +19,12 @@
   --color-success: #166534;          /* success messages, "online" dot */
 }
 
+/* Pop-up styles */
+img.enlarged {
+  height: 400px;
+}
+
+
 /* Shared columns for the illustrated sections. */
 .section-layout {
   display: grid;

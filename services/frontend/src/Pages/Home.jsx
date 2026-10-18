@@ -1,7 +1,9 @@
 import { useState } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { ImageIcon, UserRound, Plus, LogIn } from "lucide-react";
 import defaultCover from "../assets/defaultCover.webp";
+import PopUp from "../components/PopUp";
+
 
 // TODO: replace with the real user from the backend (the one who signed in)
 const user = { username: "Yasser", email: "yasser@example.com" };
@@ -50,8 +52,37 @@ function Home() {
     });
     // TODO: upload the file to the backend
   }
+  const navigate = useNavigate();
 
+  // Join Room popup: open/closed, what the user types, and the error message
+  const [showPopUp, setShowPopUp] = useState(false);
+  const [roomCode, setRoomCode] = useState("");
+  const [joinError, setJoinError] = useState("");
+
+  function closeJoinPopUp() {
+    setShowPopUp(false);
+    setJoinError("");
+  }
+
+  // Called when the user clicks "Join" (or presses Enter in the input)
+  function handleJoin(event) {
+    event.preventDefault(); // stop the browser from reloading the page
+
+    // Frontend validation: the field is required
+    if (roomCode.trim() === "") {
+      setJoinError("Please enter a room link or code.");
+      return;
+    }
+
+    closeJoinPopUp();
+    // TODO: send roomCode to the backend to check the room exists, then open that room
+    navigate("/stream");
+  }
+  function handleClick() {
+    navigate("/stream")
+  }
   return (
+
     <div className="min-h-screen">
       {/* ===== TOP BAR: logo left, "Home" + small avatar right ===== */}
       <header className="border-b border-border bg-card">
@@ -150,6 +181,7 @@ function Home() {
               <p className="text-white/80">Start a new watch party and invite your friends.</p>
               {/* TODO: go to the create room page */}
               <button
+                onClick={handleClick} 
                 type="button"
                 className="mt-3 w-full max-w-60 rounded-lg bg-white py-2 text-sm font-semibold text-secondary hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
               >
@@ -166,6 +198,7 @@ function Home() {
               <p className="text-muted-foreground">Enter a room code to join a watch party.</p>
               {/* TODO: open the "enter room code" form */}
               <button
+                onClick={() => setShowPopUp(true)}
                 type="button"
                 className="mt-3 w-full max-w-60 rounded-lg border-2 border-secondary py-1.5 text-sm font-semibold text-secondary hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
               >
@@ -175,6 +208,42 @@ function Home() {
           </div>
         </section>
       </main>
+
+      {/* ===== JOIN ROOM POPUP (hidden until showPopUp is true) ===== */}
+      <PopUp showPopUp={showPopUp} closePopUp={closeJoinPopUp} title="Join a room">
+        <p className="mt-1 text-sm text-muted-foreground">
+          Paste the invite link or enter the room code.
+        </p>
+
+        {/* noValidate: we show our own error message instead of the browser's */}
+        <form onSubmit={handleJoin} noValidate className="mt-5 flex flex-col gap-3">
+          <label htmlFor="room-code" className="text-sm font-medium text-secondary">
+            Room link or code
+          </label>
+          <input
+            id="room-code"
+            type="text"
+            autoFocus
+            placeholder="e.g. https://syncspace.app/room/abc123"
+            value={roomCode}
+            onChange={(e) => setRoomCode(e.target.value)}
+            aria-invalid={joinError ? "true" : "false"}
+            aria-describedby={joinError ? "room-code-error" : undefined}
+            className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring aria-invalid:border-destructive"
+          />
+          {joinError && (
+            <p id="room-code-error" className="text-sm text-destructive">{joinError}</p>
+          )}
+
+          <button
+            type="submit"
+            className="mt-2 flex items-center justify-center gap-2 rounded-lg bg-secondary py-2.5 text-sm font-semibold text-white hover:bg-secondary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          >
+            <LogIn className="size-4" aria-hidden="true" />
+            Join
+          </button>
+        </form>
+      </PopUp>
     </div>
   );
 }
