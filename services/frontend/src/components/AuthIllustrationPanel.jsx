@@ -1,4 +1,4 @@
-import movieNight from "../assets/signin-movie-night.png";
+import movieNight from "../assets/signin-movie-night.webp";
 
 export default function AuthIllustrationPanel() {
   return (

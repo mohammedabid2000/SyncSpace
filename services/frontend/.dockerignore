@@ -6,3 +6,4 @@ dist
 .env
 .env.*
 resource.md
+graphify-out
