@@ -2,7 +2,8 @@ import { Globe, Cast, Link, MessagesCircle, RefreshCw, ListPlus, TvMinimalPlay, 
 import imghero from "./assets/hero.webp";
 import image from "./assets/image.webp";
 import startnow from "./assets/gsnow.webp";
-import { useNavigate } from "react-router";
+import { useNavigate, Link as RouterLink } from "react-router";
+import Logo from "./components/Logo";
 
 const features = [
   {
@@ -40,8 +41,24 @@ const features2 = [
   },
 ];
 
-function App() {
+// A row of features: icon, title and text for each item (3 columns on desktop, stacked on phones)
+function FeatureGrid({ items }) {
+  return (
+    <section className="px-6 py-16">
+      <div className="mx-auto grid max-w-6xl gap-12 md:grid-cols-3">
+        {items.map((feature) => (
+          <div key={feature.title} className="flex flex-col items-center gap-4 text-center">
+            <feature.icon className="size-16 text-secondary" strokeWidth={1.5} aria-hidden="true" />
+            <h3 className="text-lg font-bold uppercase tracking-widest text-secondary">{feature.title}</h3>
+            <p className="text-muted-foreground">{feature.text}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
 
+function App() {
   const navigate = useNavigate();
 
   function handleClick() {
@@ -51,30 +68,10 @@ function App() {
     <div className="min-h-screen">
 
       <header className="flex items-center justify-between px-6 py-4">
-        <div className="flex items-center gap-3">
-
-          <img
-            src="/syncspace-logo.svg"
-            alt=""
-            className="h-10 w-auto md:h-12"
-          />
-          <span className="text-2xl font-bold tracking-tight text-secondary md:text-4xl">
-            SyncSpace
-          </span>
-        </div>
-
-        {/* Sign in button — hidden for now (commented out). Remove the comment to bring it back.
-        <button type="button" onClick={handleClick} className="invitation-button bg-secondary text-white hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-secondary">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-6" aria-hidden="true">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75" />
-          </svg>
-
-          Sign in
-        </button>
-        */}
+        <Logo size="lg" />
       </header>
 
-      <main>
+      <main className="pb-8">
         <section className="hero px-6 py-16">
           <div className="section-layout relative z-10">
             <div className="flex flex-col items-start gap-6">
@@ -102,21 +99,8 @@ function App() {
           </div>
         </section>
 
-        {/* FEATURES — 3 columns on desktop (md:grid-cols-3), stacked on phones */}
-        <section className="px-6 py-16">
-          <div className="mx-auto grid max-w-6xl gap-12 md:grid-cols-3">
-            {features.map((feature) => (
-              /* One card: flex-col + items-center + text-center = everything centered */
-              <div key={feature.title} className="flex flex-col items-center gap-4 text-center">
-                <feature.icon className="size-16 text-secondary" strokeWidth={1.5} aria-hidden="true" />
-                <h3 className="text-lg font-bold uppercase tracking-widest text-secondary">
-                  {feature.title}
-                </h3>
-                <p className="text-muted-foreground">{feature.text}</p>
-              </div>
-            ))}
-          </div>
-        </section>
+        {/* FEATURES — 3 columns on desktop, stacked on phones */}
+        <FeatureGrid items={features} />
 
         <section className="curve-navy px-6 py-16">
           <div className="section-layout">
@@ -139,24 +123,11 @@ function App() {
           </div>
         </section>
 
-        <section className="px-6 py-16">
-          <div className="mx-auto grid max-w-6xl gap-12 md:grid-cols-3">
-            {features2.map((features2) => (
-              /* One card: flex-col + items-center + text-center = everything centered */
-              <div key={features2.title} className="flex flex-col items-center gap-4 text-center">
-                <features2.icon className="size-16 text-secondary" strokeWidth={1.5} aria-hidden="true" />
-                <h3 className="text-lg font-bold uppercase tracking-widest text-secondary">
-                  {features2.title}
-                </h3>
-                <p className="text-muted-foreground">{features2.text}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-            
-        {/* Movie-night invit+ation: cream canvas and a connector anchored to the ticket. */}
+        <FeatureGrid items={features2} />
+
+        {/* INVITATION — ticket image on the left, joined to the text by a curved line */}
         <section className="curve-surface px-6 py-16">
-          <div className="section-layout invitation-layout">
+          <div className="section-layout">
             <div className="section-media invitation-art">
               <img
                 src={startnow}
@@ -197,13 +168,12 @@ function App() {
           </div>
         </section>
       </main>
-      <div className="py-8"></div>
       <footer className="bg-secondary px-6 py-12 text-white">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 text-sm md:flex-row">
           <p>&copy; 2026 SyncSpace. All rights reserved.</p>
           <nav className="flex gap-6">
-            <a href="/privacy" className="hover:underline">Privacy Policy</a>
-            <a href="/terms" className="hover:underline">Terms of Service</a>
+            <RouterLink to="/privacy" className="hover:underline">Privacy Policy</RouterLink>
+            <RouterLink to="/terms" className="hover:underline">Terms of Service</RouterLink>
           </nav>
         </div>
       </footer>

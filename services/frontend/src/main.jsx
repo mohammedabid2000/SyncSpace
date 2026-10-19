@@ -5,7 +5,12 @@ import './index.css'
 import App from './App.jsx'
 import SignIn from './Pages/SignIn.jsx'
 import SignUp from './Pages/SignUp.jsx'
-import Home from './Pages/Home.jsx' 
+import Home from './Pages/Home.jsx'
+import Stream from './Pages/Stream.jsx'
+import Privacy from './Pages/Privacy.jsx'
+import Terms from './Pages/Terms.jsx'
+import NotFound from './Pages/NotFound.jsx'
+import Friends from './Pages/Friends.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -15,6 +20,12 @@ createRoot(document.getElementById('root')).render(
         <Route path="/signin" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/home" element={<Home />} />
+        <Route path="/stream" element={<Stream />} />
+        <Route path="/friends" element={<Friends />} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/terms" element={<Terms />} />
+        {/* "*" = any other URL → 404 page (keep it LAST) */}
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
   </StrictMode>,
