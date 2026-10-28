@@ -9,17 +9,20 @@ export class DockerService {
     await this.client.ping();
   }
 
-  async runHelloWorld(): Promise<number> {
-    const container = await this.client.createContainer({
-      Image: 'hello-world:latest',
-    });
+  async startContainer(
+    options: Docker.ContainerCreateOptions,
+  ): Promise<string> {
+    const container = await this.client.createContainer(options);
 
     try {
       await container.start();
-      const result = await container.wait();
-      return result.StatusCode;
-    } finally {
+      return container.id;
+    } catch (error) {
       await container.remove({ force: true });
+      throw error;
     }
+  }
+  async stopContainer(id: string) {
+    await this.client.getContainer(id).stop();
   }
 }

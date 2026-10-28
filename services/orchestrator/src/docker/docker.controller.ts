@@ -1,4 +1,4 @@
-import { Controller, Get, Post } from '@nestjs/common';
+import { Controller, Get } from '@nestjs/common';
 import { DockerService } from './docker.service.js';
 
 @Controller('docker')
@@ -9,11 +9,5 @@ export class DockerController {
   async health() {
     await this.dockerService.ping();
     return { docker: 'ok' };
-  }
-
-  @Post('hello-world')
-  async helloWorld() {
-    const exitCode = await this.dockerService.runHelloWorld();
-    return { exitCode };
   }
 }

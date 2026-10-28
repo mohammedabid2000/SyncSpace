@@ -3,7 +3,6 @@ import { SessionsService } from './sessions.service.js';
 @Controller('sessions')
 export class SessionsController {
   constructor(private readonly sessionsService: SessionsService) {}
-
   @Get()
   list() {
     return this.sessionsService.list();
@@ -21,7 +20,7 @@ export class SessionsController {
 
   @Delete(':id')
   @HttpCode(204)
-  delete(@Param('id') id: string): void {
-    this.sessionsService.delete(Number(id));
+  async delete(@Param('id') id: string): Promise<void> {
+    await this.sessionsService.delete(Number(id));
   }
 }
