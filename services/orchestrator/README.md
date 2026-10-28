@@ -14,6 +14,8 @@ DOCKER_HOST=unix:///run/user/$(id -u)/docker.sock npm run start:dev
 
 If your Docker daemon uses `/var/run/docker.sock`, start the app with `npm run start:dev` instead. The API listens on port 3000 by default; set `PORT` to change it.
 
+The container demo needs the official `hello-world` image locally. Run `docker run --rm hello-world:latest` once to pull it and check Docker before calling the route.
+
 ## Current routes
 
 | Request | Result |
@@ -23,6 +25,7 @@ If your Docker daemon uses `/var/run/docker.sock`, start the app with `npm run s
 | `GET /sessions/:id` | Read one session, or return 404 |
 | `DELETE /sessions/:id` | Delete one session (204), or return 404 |
 | `GET /docker/health` | Ping the local Docker daemon |
+| `POST /docker/hello-world` | Create, run, wait for, and remove a temporary `hello-world` container; return its exit code |
 
 Run `npm run build`, `npm test`, and `npm run test:e2e` to verify the prototype. Docker health requires access to a Docker socket; the tests use a mock and do not create containers.
 
