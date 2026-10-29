@@ -6,9 +6,9 @@ export class NekoService {
   constructor(private readonly dockerService: DockerService) {}
 
   async startLocal(
-    httpPort = 8080,
-    udpPort = 55000,
-    sessionId = 0,
+    httpPort: number,
+    udpPort: number,
+    sessionId: number,
   ): Promise<string> {
     const id = await this.dockerService.startContainer({
       Image: 'ghcr.io/m1k1o/neko/firefox:latest',

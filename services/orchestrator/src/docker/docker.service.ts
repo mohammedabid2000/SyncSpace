@@ -22,8 +22,20 @@ export class DockerService {
       throw error;
     }
   }
-  async stopContainer(id: string) {
-    await this.client.getContainer(id).stop();
+  async stopContainer(id: string): Promise<void> {
+    try {
+      await this.client.getContainer(id).stop();
+    } catch (error) {
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'statusCode' in error &&
+        (error.statusCode === 304 || error.statusCode === 404)
+      ) {
+        return;
+      }
+      throw error;
+    }
   }
   async listContainersByLabel(label: string): Promise<Docker.ContainerInfo[]> {
     return this.client.listContainers({

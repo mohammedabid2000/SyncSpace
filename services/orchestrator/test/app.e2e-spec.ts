@@ -7,11 +7,30 @@ import { NekoService } from './../src/neko/neko.service.js';
 
 describe('AppController (e2e)', () => {
   let app: INestApplication<App>;
-  const startLocal = vi.fn().mockResolvedValue('neko-container-id');
-  const stopLocal = vi.fn().mockResolvedValue(undefined);
-  const listLocal = vi.fn().mockResolvedValue([]);
+  let running: Array<{ Id: string; Labels: Record<string, string> }>;
+  const startLocal = vi.fn();
+  const stopLocal = vi.fn();
+  const listLocal = vi.fn();
 
   beforeEach(async () => {
+    running = [];
+    startLocal
+      .mockReset()
+      .mockImplementation(async (httpPort, udpPort, sessionId) => {
+        running.push({
+          Id: 'neko-container-id',
+          Labels: {
+            'com.syncspace.http-port': String(httpPort),
+            'com.syncspace.udp-port': String(udpPort),
+            'com.syncspace.session-id': String(sessionId),
+          },
+        });
+        return 'neko-container-id';
+      });
+    stopLocal.mockReset().mockImplementation(async (id) => {
+      running = running.filter((container) => container.Id !== id);
+    });
+    listLocal.mockReset().mockImplementation(async () => [...running]);
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     })
@@ -52,6 +71,12 @@ describe('AppController (e2e)', () => {
     await request(app.getHttpServer()).delete('/sessions/1').expect(204);
     expect(stopLocal).toHaveBeenCalledWith('neko-container-id');
     await request(app.getHttpServer()).get('/sessions/1').expect(404);
+  });
+
+  it('rejects non-numeric session IDs and has no direct Neko test route', async () => {
+    await request(app.getHttpServer()).get('/sessions/abc').expect(400);
+    await request(app.getHttpServer()).delete('/sessions/abc').expect(400);
+    await request(app.getHttpServer()).post('/neko/local').expect(404);
   });
 
   afterEach(async () => {

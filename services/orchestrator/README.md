@@ -22,7 +22,7 @@ docker pull ghcr.io/m1k1o/neko/firefox:latest
 
 Each running session gets a unique port pair. The app currently uses HTTP ports `8080–8179` and UDP ports `55000–55099`, reusing a pair after its session stops. Open the URL using the `httpPort` returned by `POST /sessions`, for example `http://localhost:8080`. The local Neko password is `neko`. These ports and credentials are development defaults; integration with SyncSpace room authentication is still to come.
 
-The session list is reconstructed from running, labeled Docker containers when Nest restarts. A container started through the standalone `/neko/local` test route has session ID `0` and is excluded from the session list, though its port is reserved. This prototype expects the Docker daemon to be available at startup.
+The session list is reconstructed from running, labeled Docker containers when Nest restarts. Session reads and creation also remove records for containers that stopped outside the API and release their ports. This prototype expects the Docker daemon to be available at startup.
 
 ## Current routes
 
@@ -30,11 +30,9 @@ The session list is reconstructed from running, labeled Docker containers when N
 | --- | --- |
 | `POST /sessions` | Start a Neko browser and return its session ID, container ID, and ports |
 | `GET /sessions` | List sessions |
-| `GET /sessions/:id` | Read one session, or return 404 |
-| `DELETE /sessions/:id` | Stop its Neko container and delete the session (204), or return 404 |
+| `GET /sessions/:id` | Read one running session, return 404 if missing, or 400 for an invalid ID |
+| `DELETE /sessions/:id` | Stop its Neko container and delete the session (204), or return 404; already stopped containers can be deleted |
 | `GET /docker/health` | Ping the local Docker daemon |
-| `POST /neko/local` | Start a local Neko container and return its Docker ID |
-| `DELETE /neko/local/:id` | Stop a local Neko container by Docker ID |
 
 Run `npm run build`, `npm test`, and `npm run test:e2e` to verify the prototype. Docker health requires access to a Docker socket; the session tests use a mock and do not create containers.
 

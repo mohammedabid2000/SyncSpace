@@ -4,12 +4,33 @@ import { NekoService } from '../neko/neko.service.js';
 
 describe('SessionsService', () => {
   let service: SessionsService;
-  const startLocal = vi.fn().mockResolvedValue('neko-container-id');
-  const stopLocal = vi.fn().mockResolvedValue(undefined);
-  const listLocal = vi.fn().mockResolvedValue([]);
+  let running: Array<{ Id: string; Labels: Record<string, string> }>;
+  let containerCounter: number;
+  const startLocal = vi.fn();
+  const stopLocal = vi.fn();
+  const listLocal = vi.fn();
 
   beforeEach(async () => {
-    vi.clearAllMocks();
+    running = [];
+    containerCounter = 0;
+    startLocal
+      .mockReset()
+      .mockImplementation(async (httpPort, udpPort, sessionId) => {
+        const Id = `neko-container-${++containerCounter}`;
+        running.push({
+          Id,
+          Labels: {
+            'com.syncspace.http-port': String(httpPort),
+            'com.syncspace.udp-port': String(udpPort),
+            'com.syncspace.session-id': String(sessionId),
+          },
+        });
+        return Id;
+      });
+    stopLocal.mockReset().mockImplementation(async (id) => {
+      running = running.filter((container) => container.Id !== id);
+    });
+    listLocal.mockReset().mockImplementation(async () => [...running]);
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         SessionsService,
@@ -28,16 +49,16 @@ describe('SessionsService', () => {
     expect(session).toEqual({
       id: 1,
       status: 'created',
-      containerId: 'neko-container-id',
+      containerId: 'neko-container-1',
       httpPort: 8080,
       udpPort: 55000,
     });
     expect(startLocal).toHaveBeenCalledWith(8080, 55000, 1);
-    expect(service.get(session.id)).toEqual(session);
+    await expect(service.get(session.id)).resolves.toEqual(session);
 
     await service.delete(session.id);
-    expect(stopLocal).toHaveBeenCalledWith('neko-container-id');
-    expect(service.list()).toEqual([]);
+    expect(stopLocal).toHaveBeenCalledWith('neko-container-1');
+    await expect(service.list()).resolves.toEqual([]);
   });
 
   it('gives concurrent sessions separate ports and reuses a released slot', async () => {
@@ -60,19 +81,17 @@ describe('SessionsService', () => {
   });
 
   it('restores labeled containers and reserves their ports on startup', async () => {
-    listLocal.mockResolvedValueOnce([
-      {
-        Id: 'existing-container',
-        Labels: {
-          'com.syncspace.http-port': '8080',
-          'com.syncspace.udp-port': '55000',
-          'com.syncspace.session-id': '7',
-        },
+    running.push({
+      Id: 'existing-container',
+      Labels: {
+        'com.syncspace.http-port': '8080',
+        'com.syncspace.udp-port': '55000',
+        'com.syncspace.session-id': '7',
       },
-    ]);
+    });
 
     await service.onModuleInit();
-    expect(service.get(7)).toMatchObject({
+    await expect(service.get(7)).resolves.toMatchObject({
       containerId: 'existing-container',
       httpPort: 8080,
       udpPort: 55000,
@@ -80,5 +99,14 @@ describe('SessionsService', () => {
 
     const next = await service.create();
     expect(next).toMatchObject({ id: 8, httpPort: 8081, udpPort: 55001 });
+  });
+
+  it('removes a browser that stopped outside the API and reuses its ports', async () => {
+    const first = await service.create();
+    running = [];
+
+    await expect(service.get(first.id)).rejects.toThrow('Session not found');
+    const second = await service.create();
+    expect(second).toMatchObject({ id: 2, httpPort: 8080, udpPort: 55000 });
   });
 });

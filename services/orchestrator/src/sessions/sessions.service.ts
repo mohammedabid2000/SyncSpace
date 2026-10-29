@@ -6,6 +6,10 @@ import {
 } from '@nestjs/common';
 import { NekoService } from '../neko/neko.service.js';
 
+const HTTP_PORT_START = 8080;
+const UDP_PORT_START = 55000;
+const MAX_SESSIONS = 100;
+
 type Session = {
   id: number;
   status: string;
@@ -22,7 +26,7 @@ export class SessionsService implements OnModuleInit {
 
   private readonly usedSlots = new Set<number>();
   private reserveSlot(): number {
-    for (let slot = 0; slot < 100; slot++) {
+    for (let slot = 0; slot < MAX_SESSIONS; slot++) {
       if (!this.usedSlots.has(slot)) {
         this.usedSlots.add(slot);
         return slot;
@@ -31,14 +35,16 @@ export class SessionsService implements OnModuleInit {
     throw new ServiceUnavailableException('No free Neko ports');
   }
 
-  list(): Session[] {
+  async list(): Promise<Session[]> {
+    await this.removeStoppedSessions();
     return this.sessions;
   }
 
   async create(): Promise<Session> {
+    await this.removeStoppedSessions();
     const slot = this.reserveSlot();
-    const httpPort = 8080 + slot;
-    const udpPort = 55000 + slot;
+    const httpPort = HTTP_PORT_START + slot;
+    const udpPort = UDP_PORT_START + slot;
     const sessionId = this.nextId++;
     let containerId: string;
 
@@ -65,23 +71,22 @@ export class SessionsService implements OnModuleInit {
     return session;
   }
 
-  get(id: number): Session {
+  async get(id: number): Promise<Session> {
+    await this.removeStoppedSessions();
     for (const session of this.sessions) {
       if (session.id === id) return session;
     }
     throw new NotFoundException('Session not found');
   }
   async delete(id: number): Promise<void> {
-    for (let i = 0; i < this.sessions.length; i++) {
-      if (this.sessions[i].id === id) {
-        const session = this.sessions[i];
-        await this.nekoService.stopLocal(this.sessions[i].containerId);
-        this.sessions.splice(i, 1);
-        this.usedSlots.delete(session.httpPort - 8080);
-        return;
-      }
+    const session = this.sessions.find((item) => item.id === id);
+    if (!session) throw new NotFoundException('Session not found');
+    await this.nekoService.stopLocal(session.containerId);
+    const index = this.sessions.findIndex((item) => item.id === id);
+    if (index !== -1) {
+      this.sessions.splice(index, 1);
+      this.usedSlots.delete(session.httpPort - HTTP_PORT_START);
     }
-    throw new NotFoundException('Session not found');
   }
 
   // Restore running neko sessions and reserve their ports after Nest restarts
@@ -91,13 +96,13 @@ export class SessionsService implements OnModuleInit {
     for (const container of containers) {
       const httpPort = Number(container.Labels['com.syncspace.http-port']);
       const udpPort = Number(container.Labels['com.syncspace.udp-port']);
-      const slot = httpPort - 8080;
+      const slot = httpPort - HTTP_PORT_START;
 
       if (
         !Number.isInteger(slot) ||
         slot < 0 ||
-        slot >= 100 ||
-        udpPort !== 55000 + slot
+        slot >= MAX_SESSIONS ||
+        udpPort !== UDP_PORT_START + slot
       ) {
         continue;
       }
@@ -113,6 +118,22 @@ export class SessionsService implements OnModuleInit {
         udpPort,
       });
       this.nextId = Math.max(this.nextId, id + 1);
+    }
+  }
+
+  // remove sessions whose containers stopped; loop backward so splice does not skip entries
+  private async removeStoppedSessions(): Promise<void> {
+    const existingIds = new Set(this.sessions.map((session) => session.id));
+    const containers = await this.nekoService.listLocal();
+    const runningIds = new Set(containers.map((container) => container.Id));
+
+    for (let i = this.sessions.length - 1; i >= 0; i--) {
+      const session = this.sessions[i];
+      if (!existingIds.has(session.id)) continue;
+      if (!runningIds.has(session.containerId)) {
+        this.usedSlots.delete(session.httpPort - HTTP_PORT_START);
+        this.sessions.splice(i, 1);
+      }
     }
   }
 }

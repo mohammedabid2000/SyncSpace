@@ -1,4 +1,12 @@
-import { Controller, Get, Param, Post, Delete, HttpCode } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  Post,
+  Delete,
+  HttpCode,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { SessionsService } from './sessions.service.js';
 @Controller('sessions')
 export class SessionsController {
@@ -14,13 +22,13 @@ export class SessionsController {
   }
 
   @Get(':id')
-  get(@Param('id') id: string) {
-    return this.sessionsService.get(Number(id));
+  get(@Param('id', ParseIntPipe) id: number) {
+    return this.sessionsService.get(id);
   }
 
   @Delete(':id')
   @HttpCode(204)
-  async delete(@Param('id') id: string): Promise<void> {
-    await this.sessionsService.delete(Number(id));
+  async delete(@Param('id', ParseIntPipe) id: number): Promise<void> {
+    await this.sessionsService.delete(id);
   }
 }
