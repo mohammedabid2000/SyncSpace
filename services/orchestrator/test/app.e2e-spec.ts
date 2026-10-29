@@ -9,13 +9,14 @@ describe('AppController (e2e)', () => {
   let app: INestApplication<App>;
   const startLocal = vi.fn().mockResolvedValue('neko-container-id');
   const stopLocal = vi.fn().mockResolvedValue(undefined);
+  const listLocal = vi.fn().mockResolvedValue([]);
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     })
       .overrideProvider(NekoService)
-      .useValue({ startLocal, stopLocal })
+      .useValue({ startLocal, stopLocal, listLocal })
       .compile();
 
     app = moduleFixture.createNestApplication();
@@ -37,12 +38,17 @@ describe('AppController (e2e)', () => {
       id: 1,
       status: 'created',
       containerId: 'neko-container-id',
+      httpPort: 8080,
+      udpPort: 55000,
     });
 
-    await request(app.getHttpServer())
-      .get('/sessions/1')
-      .expect(200)
-      .expect({ id: 1, status: 'created', containerId: 'neko-container-id' });
+    await request(app.getHttpServer()).get('/sessions/1').expect(200).expect({
+      id: 1,
+      status: 'created',
+      containerId: 'neko-container-id',
+      httpPort: 8080,
+      udpPort: 55000,
+    });
     await request(app.getHttpServer()).delete('/sessions/1').expect(204);
     expect(stopLocal).toHaveBeenCalledWith('neko-container-id');
     await request(app.getHttpServer()).get('/sessions/1').expect(404);

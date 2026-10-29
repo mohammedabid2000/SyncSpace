@@ -25,4 +25,9 @@ export class DockerService {
   async stopContainer(id: string) {
     await this.client.getContainer(id).stop();
   }
+  async listContainersByLabel(label: string): Promise<Docker.ContainerInfo[]> {
+    return this.client.listContainers({
+      filters: { label: [label] },
+    });
+  }
 }

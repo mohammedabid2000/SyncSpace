@@ -1,6 +1,6 @@
 # SyncSpace Neko orchestrator
 
-This is the local NestJS prototype for SyncSpace's Neko orchestrator. Creating a session starts a Neko Firefox container; deleting it stops the container. Session records are kept in memory and disappear when the process restarts.
+This is the local NestJS prototype for SyncSpace's Neko orchestrator. Creating a session starts a Neko Firefox container; deleting it stops the container. On startup, the app restores sessions from running containers with its Docker labels.
 
 ## Run locally
 
@@ -20,13 +20,15 @@ Pull the Neko Firefox image before starting a session:
 docker pull ghcr.io/m1k1o/neko/firefox:latest
 ```
 
-This local prototype binds Neko to `http://localhost:8080` and UDP port `55000`, so only one session can run at a time. Use the configured local Neko password to open the browser. Stop a session before creating another. Multi-session port allocation and integration with SyncSpace room authentication are still to come.
+Each running session gets a unique port pair. The app currently uses HTTP ports `8080–8179` and UDP ports `55000–55099`, reusing a pair after its session stops. Open the URL using the `httpPort` returned by `POST /sessions`, for example `http://localhost:8080`. The local Neko password is `neko`. These ports and credentials are development defaults; integration with SyncSpace room authentication is still to come.
+
+The session list is reconstructed from running, labeled Docker containers when Nest restarts. A container started through the standalone `/neko/local` test route has session ID `0` and is excluded from the session list, though its port is reserved. This prototype expects the Docker daemon to be available at startup.
 
 ## Current routes
 
 | Request | Result |
 | --- | --- |
-| `POST /sessions` | Start a Neko browser and return its session and container IDs |
+| `POST /sessions` | Start a Neko browser and return its session ID, container ID, and ports |
 | `GET /sessions` | List sessions |
 | `GET /sessions/:id` | Read one session, or return 404 |
 | `DELETE /sessions/:id` | Stop its Neko container and delete the session (204), or return 404 |
