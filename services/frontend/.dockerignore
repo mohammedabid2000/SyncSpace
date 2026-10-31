@@ -1,0 +1,9 @@
+# Not needed inside the image: npm ci and npm run build recreate them
+node_modules
+dist
+
+# Secrets and local files must never go into the image
+.env
+.env.*
+resource.md
+graphify-out

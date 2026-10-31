@@ -1,0 +1,210 @@
+@import "tailwindcss";
+
+/* ===== THEME =====
+   Every --color-x below becomes Tailwind classes: bg-x, text-x, border-x, ring-x...
+   Every --radius-x becomes rounded-x. */
+@theme {
+  --font-sans: "Helvetica Neue", Helvetica, Arial, sans-serif;  /* main font */
+  --font-serif: "Times New Roman", Times, serif;                /* italic accents */
+
+  --color-background: #F4F0E8;       /* cream: page background */
+  --color-foreground: #000000;       /* black: main text */
+  --color-card: #FEFEFE;             /* white: cards, popups */
+  --color-primary: #DC2223;          /* logo red: main buttons */
+  --color-primary-hover: #B91C1C;    /* red when hovered */
+  --color-secondary: #0D2434;        /* logo navy */
+  --color-secondary-hover: #1B3A50;  /* navy when hovered */
+  --color-muted-foreground: #5B6B78; /* grey text: hints, descriptions */
+  --color-accent: #D5DEE8;           /* light navy: hover backgrounds, card borders */
+  --color-destructive: #B91C1C;      /* errors, remove */
+  --color-success: #166534;          /* "online" / "connected" dots */
+  --color-border: #E2DBCE;           /* borders, dividers */
+  --color-input: #E2DBCE;            /* input borders */
+  --color-ring: #0D2434;             /* keyboard focus outline */
+  --color-hero-blush: #EDC6C2;       /* curved background of the hero */
+  --color-navy-light: #D5DEE8;       /* curved background of the second section */
+
+  --radius-md: 0.5rem;
+  --radius-lg: 0.625rem;
+  --radius-xl: 0.875rem;
+  --radius-2xl: 1.125rem;
+  --radius-3xl: 1.375rem;
+}
+
+/* Defaults for the whole app */
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}
+
+/* ===== LANDING PAGE ===== */
+
+/* Shared columns for the illustrated sections. */
+.section-layout {
+  display: grid;
+  align-items: center;
+  gap: 3rem;
+  max-width: 72rem;
+  margin-inline: auto;
+}
+
+.section-layout > * {
+  min-width: 0;
+}
+
+.section-media {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 4 / 3;
+  width: 100%;
+}
+
+.section-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 0.75rem;
+  box-shadow: 0 12px 24px -10px rgb(13 36 52 / 25%);
+}
+
+.section-image-ticket {
+  border-radius: 0;
+  box-shadow: none;
+  filter: drop-shadow(0 12px 12px rgb(13 36 52 / 15%));
+}
+
+@media (min-width: 48rem) {
+  .section-layout {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.invitation-art {
+  position: relative;
+}
+
+.invitation-connector {
+  display: none;
+  position: absolute;
+  left: 84%;
+  top: 14%;
+  width: calc(16% + 2rem);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.invitation-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1.75rem;
+}
+
+.invitation-title {
+  font-size: clamp(2.25rem, 4.4vw, 4rem);
+  font-weight: 400;
+  line-height: 1.08;
+  letter-spacing: -0.035em;
+}
+
+.invitation-title .font-serif {
+  font-size: 1.12em;
+  letter-spacing: -0.025em;
+}
+
+.invitation-description {
+  max-width: 25rem;
+  font-size: clamp(1.125rem, 1.8vw, 1.5rem);
+  line-height: 1.5;
+}
+
+.invitation-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.875rem;
+  padding: 1rem 2rem;
+  border-radius: 0.75rem;
+  font-size: 1.25rem;
+  cursor: pointer;
+}
+
+@media (min-width: 64rem) {
+  .invitation-connector {
+    display: block;
+  }
+}
+
+.hero {
+  position: relative;
+  isolation: isolate;
+}
+
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+
+  background: linear-gradient(
+    to bottom,
+    var(--color-background) 0%,
+    var(--color-hero-blush) 75%
+  );
+
+  border-bottom-right-radius: 55% 45%;
+}
+
+/* Second curved section: same idea as .hero, mirrored (curve on the bottom-left) */
+.curve-navy {
+  position: relative;
+  isolation: isolate;
+}
+
+.curve-navy::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+
+  background: linear-gradient(
+    to bottom,
+    var(--color-background) 0%,
+    var(--color-navy-light) 75%
+  );
+
+  border-bottom-left-radius: 55% 45%;
+}
+
+.curve-surface {
+  position: relative;
+  isolation: isolate;
+}
+
+.curve-surface::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+
+  background: linear-gradient(
+    to bottom,
+    var(--color-background) 0%,
+    var(--color-hero-blush) 75%
+  );
+
+  border-bottom-right-radius: 55% 45%;
+}
