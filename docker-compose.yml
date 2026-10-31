@@ -1,8 +1,8 @@
-version: '3.8'
+# version: '3.8'  <-- Remove this line, Docker says it's obsolete
 
 networks:
   database:
-    internal: true   # No external access — only backend services can reach Mongo
+    internal: true
   frontend:
   backend:
 
@@ -12,6 +12,22 @@ volumes:
   elasticsearch_data:
 
 services:
+  # ---------- NGINX (Reverse Proxy + WAF) ----------
+  nginx:
+    build: ./infra/nginx
+    container_name: syncspace-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infra/nginx/logs:/var/log/nginx
+    networks:
+      - frontend
+      - backend
+    # depends_on:
+    #   - frontend
+    #   - backend
   # ---------- DATABASE ----------
   mongodb:
     image: mongo:7.0
@@ -33,49 +49,7 @@ services:
       retries: 5
       start_period: 20s
 
-  # ---------- BACKEND (Dev 3 & Dev 4) ----------
-  backend:
-    build: ./services/backend
-    container_name: syncspace-backend
-    restart: unless-stopped
-    env_file: .env
-    environment:
-      MONGO_URI: mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASSWORD}@mongodb:27017/${MONGO_DB_NAME}?authSource=admin
-    depends_on:
-      mongodb:
-        condition: service_healthy
-    networks:
-      - backend
-      - database
-
-  # ---------- FRONTEND (Dev 1) ----------
-  frontend:
-    build: ./services/frontend
-    container_name: syncspace-frontend
-    restart: unless-stopped
-    env_file: .env
-    ports:
-      - "3000:3000"
-    networks:
-      - frontend
-      - backend
-
-  # ---------- NEKO ORCHESTRATOR (Dev 2) ----------
-  # Note: Neko containers are spawned dynamically, not defined here.
-  # This service is the API that talks to the Docker daemon.
-  orchestrator:
-    build: ./services/orchestrator
-    container_name: syncspace-orchestrator
-    restart: unless-stopped
-    env_file: .env
-    volumes:
-      # WARNING: For production, replace this with a docker-socket-proxy.
-      # This is fine for local dev only.
-      - /var/run/docker.sock:/var/run/docker.sock
-    networks:
-      - backend
-
-  # ---------- VAULT (Dev 4) ----------
+  # ---------- VAULT ----------
   vault:
     image: hashicorp/vault:1.15
     container_name: syncspace-vault
@@ -91,3 +65,155 @@ services:
       - backend
     ports:
       - "8200:8200"
+        # ---------- ELASTICSEARCH ----------
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: syncspace-elasticsearch
+    restart: unless-stopped
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=true
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s -u elastic:${ELASTIC_PASSWORD} http://localhost:9200/_cluster/health | grep -q green"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ---------- LOGSTASH ----------
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.11.0
+    container_name: syncspace-logstash
+    restart: unless-stopped
+    volumes:
+      - ./infra/elk/logstash/pipeline:/usr/share/logstash/pipeline
+      - ./infra/elk/logstash/config:/usr/share/logstash/config
+    environment:
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - backend
+
+  # ---------- KIBANA ----------
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.0
+    container_name: syncspace-kibana
+    restart: unless-stopped
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - ELASTICSEARCH_USERNAME=kibana_system
+      - ELASTICSEARCH_PASSWORD=${KIBANA_PASSWORD}
+    ports:
+      - "5601:5601"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - backend
+    # ---------- PROMETHEUS ----------
+  prometheus:
+    image: prom/prometheus:v2.48.0
+    container_name: syncspace-prometheus
+    restart: unless-stopped
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./infra/prometheus/alerts.yml:/etc/prometheus/alerts.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.retention.time=15d'
+    networks:
+      - backend
+    ports:
+      - "9090:9090"
+
+  # ---------- GRAFANA ----------
+  grafana:
+    image: grafana/grafana:10.2.0
+    container_name: syncspace-grafana
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./infra/grafana/dashboards:/etc/grafana/provisioning/dashboards
+    networks:
+      - backend
+    ports:
+      - "3001:3000"
+    depends_on:
+      - prometheus
+
+  # ---------- NODE EXPORTER ----------
+  node-exporter:
+    image: prom/node-exporter:v1.7.0
+    container_name: syncspace-node-exporter
+    restart: unless-stopped
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+    networks:
+      - backend
+  # ---------- CADVISOR ----------
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.47.2
+    container_name: syncspace-cadvisor
+    restart: unless-stopped
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    networks:
+      - backend
+
+  # ---------- BACKEND (Uncomment when aelbouss creates the folder) ----------
+  # backend:
+  #   build: ./services/backend
+  #   container_name: syncspace-backend
+  #   restart: unless-stopped
+  #   env_file: .env
+  #   environment:
+  #     MONGO_URI: mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASSWORD}@mongodb:27017/${MONGO_DB_NAME}?authSource=admin
+  #   depends_on:
+  #     mongodb:
+  #       condition: service_healthy
+  #   networks:
+  #     - backend
+  #     - database
+
+  # ---------- FRONTEND (Uncomment when Yasser creates the folder) ----------
+  # frontend:
+  #   build: ./services/frontend
+  #   container_name: syncspace-frontend
+  #   restart: unless-stopped
+  #   env_file: .env
+  #   ports:
+  #     - "3000:3000"
+  #   networks:
+  #     - frontend
+  #     - backend
+
+  # ---------- ORCHESTRATOR (Uncomment when Hamza creates the folder) ----------
+  # orchestrator:
+  #   build: ./services/orchestrator
+  #   container_name: syncspace-orchestrator
+  #   restart: unless-stopped
+  #   env_file: .env
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock
+  #   networks:
+  #     - backend
