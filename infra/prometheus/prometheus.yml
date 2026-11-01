@@ -18,9 +18,9 @@ scrape_configs:
     static_configs:
       - targets: ['cadvisor:8080']
 
-  - job_name: 'mongodb'
+  - job_name: 'postgresql'
     static_configs:
-      - targets: ['mongodb-exporter:9216']
+      - targets: ['postgres-exporter:9187']
 
   - job_name: 'nginx'
     static_configs:

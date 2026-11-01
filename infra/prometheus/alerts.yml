@@ -25,10 +25,10 @@ groups:
         annotations:
           summary: "High memory usage on {{ $labels.instance }}"
 
-      - alert: MongoDBDown
-        expr: mongodb_up == 0
+      - alert: PostgreSQLDown
+        expr: pg_up == 0
         for: 1m
         labels:
           severity: critical
         annotations:
-          summary: "MongoDB is down"
+          summary: "PostgreSQL is down"

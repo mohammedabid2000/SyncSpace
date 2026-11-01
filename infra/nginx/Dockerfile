@@ -1,19 +1,12 @@
 FROM owasp/modsecurity-crs:nginx-alpine
 
-# Copy Nginx configuration
-COPY nginx.conf /etc/nginx/nginx.conf
-COPY conf.d/ /etc/nginx/conf.d/
+# Use upstream entrypoint/templates so the ModSecurity module and CRS are loaded.
+# Compose supplies the backend address and mounts the local TLS certificate/key.
+# The older nginx.conf, conf.d/ and modsecurity/ files are not copied by this image.
 
-# Copy SSL certificates
-COPY certs/ /etc/nginx/certs/
-
-# Copy ModSecurity config and rules (overrides base image defaults)
-COPY modsecurity/modsecurity.conf /etc/modsecurity.d/modsecurity.conf
-COPY modsecurity/crs-setup.conf /etc/modsecurity.d/owasp-crs/crs-setup.conf
-COPY modsecurity/rules/ /etc/modsecurity.d/owasp-crs/rules/
-
-RUN mkdir -p /var/log/nginx
-
-EXPOSE 80 443
-
-CMD ["nginx", "-g", "daemon off;"]
+# Rootless local Docker uses an unprivileged host HTTPS port.
+# Preserve Nginx request variables for evaluation by Nginx, not the shell.
+USER root
+RUN sed -i 's|https://$host$request_uri|https://$host:${HTTPS_PORT}$request_uri|' /etc/nginx/templates/conf.d/default.conf.template
+ENV HTTPS_PORT=8443
+USER nginx
