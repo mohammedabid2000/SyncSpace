@@ -6,6 +6,9 @@ import PopUp from "../components/PopUp";
 import AppNav from "../components/AppNav";
 import Avatar from "../components/Avatar";
 import { TextField } from "../components/TextField";
+import Button from "../components/Button";
+import Card from "../components/Card";
+import Toast from "../components/Toast";
 import yasserPhoto from "../assets/avatars/yasser.svg";
 
 
@@ -38,6 +41,7 @@ function Home() {
   const [draftAvatar, setDraftAvatar] = useState(null); // null = photo not changed
   const [draftCover, setDraftCover] = useState(null);
   const [fieldErrors, setFieldErrors] = useState({ username: "", email: "" });
+  const [toast, setToast] = useState(""); // "Profile saved" message after Save
 
   function startEditing() {
     setDraftUsername(user.username);
@@ -87,6 +91,7 @@ function Home() {
     setDraftAvatar(null);
     setDraftCover(null);
     setEditing(false);
+    setToast("Profile saved");
     // TODO: send { username, email } and the new photos to the backend
   }
 
@@ -183,10 +188,11 @@ function Home() {
 
       <main className="mx-auto max-w-6xl px-4 py-6 md:px-6">
         {/* ===== PROFILE CARD ===== */}
-        <section className="overflow-hidden rounded-2xl border border-accent bg-card shadow-sm">
+        <Card as="section" className="overflow-hidden">
           {/* Cover photo: the user's upload, or the default cover */}
           <div className="relative h-44 md:h-72">
-            <img src={shownCover} alt="" className="h-full w-full object-cover" />
+            {/* object-right: the default cover has its logo on the right, keep it visible on narrow screens */}
+            <img src={shownCover} alt="" className={`h-full w-full object-cover ${shownCover === defaultCover ? "object-right" : ""}`} />
 
             {/* Edit mode only: pencil button to change the cover.
                 The <label> is the visible button; the real file input is hidden inside it */}
@@ -232,29 +238,14 @@ function Home() {
                   {/* Not editing: "Edit profile". Editing: "Cancel" + "Save" */}
                   {editing ? (
                     <div className="flex shrink-0 gap-2">
-                      <button
-                        type="button"
-                        onClick={cancelEditing}
-                        className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-secondary hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        type="submit"
-                        className="rounded-lg bg-secondary px-4 py-2 text-sm font-medium text-white hover:bg-secondary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-                      >
-                        Save
-                      </button>
+                      <Button variant="subtle" onClick={cancelEditing}>Cancel</Button>
+                      <Button type="submit">Save</Button>
                     </div>
                   ) : (
-                    <button
-                      type="button"
-                      onClick={startEditing}
-                      className="flex w-fit shrink-0 items-center gap-2 rounded-lg border border-border py-2 pl-3 pr-4 text-sm font-medium text-secondary hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring"
-                    >
+                    <Button variant="subtle" onClick={startEditing} className="w-fit shrink-0">
                       <UserRound className="size-4" aria-hidden="true" />
                       Edit profile
-                    </button>
+                    </Button>
                   )}
                 </div>
 
@@ -267,40 +258,25 @@ function Home() {
 
                 {/* Info: inputs in edit mode, plain text otherwise */}
                 {editing ? (
-                  <div className="mt-5 grid max-w-md gap-4 border-t border-border pt-5 text-sm">
-                    <div className="flex flex-col gap-1.5">
-                      <label htmlFor="edit-username" className="font-medium text-muted-foreground">Username</label>
-                      <input
-                        id="edit-username"
-                        type="text"
-                        autoComplete="username"
-                        maxLength={20}
-                        value={draftUsername}
-                        onChange={(e) => setDraftUsername(e.target.value)}
-                        aria-invalid={fieldErrors.username ? "true" : "false"}
-                        aria-describedby={fieldErrors.username ? "edit-username-error" : undefined}
-                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-secondary outline-none focus-visible:ring-2 focus-visible:ring-ring aria-invalid:border-destructive"
-                      />
-                      {fieldErrors.username && (
-                        <p id="edit-username-error" className="text-destructive">{fieldErrors.username}</p>
-                      )}
-                    </div>
-                    <div className="flex flex-col gap-1.5">
-                      <label htmlFor="edit-email" className="font-medium text-muted-foreground">Email</label>
-                      <input
-                        id="edit-email"
-                        type="email"
-                        autoComplete="email"
-                        value={draftEmail}
-                        onChange={(e) => setDraftEmail(e.target.value)}
-                        aria-invalid={fieldErrors.email ? "true" : "false"}
-                        aria-describedby={fieldErrors.email ? "edit-email-error" : undefined}
-                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-secondary outline-none focus-visible:ring-2 focus-visible:ring-ring aria-invalid:border-destructive"
-                      />
-                      {fieldErrors.email && (
-                        <p id="edit-email-error" className="text-destructive">{fieldErrors.email}</p>
-                      )}
-                    </div>
+                  <div className="mt-5 grid max-w-md gap-4 border-t border-border pt-5">
+                    <TextField
+                      id="edit-username"
+                      label="Username"
+                      autoComplete="username"
+                      maxLength={20}
+                      value={draftUsername}
+                      onChange={setDraftUsername}
+                      error={fieldErrors.username}
+                    />
+                    <TextField
+                      id="edit-email"
+                      label="Email"
+                      type="email"
+                      autoComplete="email"
+                      value={draftEmail}
+                      onChange={setDraftEmail}
+                      error={fieldErrors.email}
+                    />
                   </div>
                 ) : (
                   <dl className="mt-5 grid max-w-md grid-cols-[7rem_1fr] gap-y-3 border-t border-border pt-5 text-sm">
@@ -313,7 +289,7 @@ function Home() {
               </form>
             </div>
           </div>
-        </section>
+        </Card>
 
         {/* ===== READY TO WATCH ===== */}
         <section className="mx-auto mt-12 max-w-5xl text-center">
@@ -332,31 +308,23 @@ function Home() {
               <h3 className="text-xl font-bold tracking-tight">Create Room</h3>
               <p className="text-white/80">Start a new watch party and invite your friends.</p>
               {/* Opens the Create Room popup */}
-              <button
-                onClick={() => setShowCreatePopUp(true)}
-                type="button"
-                className="mt-3 w-full max-w-60 rounded-lg bg-white py-2 text-sm font-semibold text-secondary hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-              >
+              <Button variant="light" onClick={() => setShowCreatePopUp(true)} className="mt-3 w-full max-w-60">
                 Create Room
-              </button>
+              </Button>
             </div>
 
             {/* Join Room — white card */}
-            <div className="flex flex-col items-center gap-1 rounded-2xl border border-accent bg-card px-6 py-5 shadow-sm">
+            <Card className="flex flex-col items-center gap-1 px-6 py-5">
               <div className="flex size-10 items-center justify-center rounded-full bg-accent text-secondary">
                 <LogIn className="size-5" aria-hidden="true" />
               </div>
               <h3 className="text-xl font-bold tracking-tight text-secondary">Join Room</h3>
               <p className="text-muted-foreground">Enter a room code to join a watch party.</p>
-              {/* TODO: open the "enter room code" form */}
-              <button
-                onClick={() => setShowPopUp(true)}
-                type="button"
-                className="mt-3 w-full max-w-60 rounded-lg border-2 border-secondary py-1.5 text-sm font-semibold text-secondary hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-              >
+              {/* Opens the Join Room popup */}
+              <Button variant="outline" onClick={() => setShowPopUp(true)} className="mt-3 w-full max-w-60">
                 Join Room
-              </button>
-            </div>
+              </Button>
+            </Card>
           </div>
         </section>
       </main>
@@ -372,20 +340,16 @@ function Home() {
           <TextField
             id="room-code"
             label="Room link or code"
-            autoFocus
             placeholder="e.g. https://syncspace.app/room/abc123"
             value={roomCode}
             onChange={setRoomCode}
             error={joinError}
           />
 
-          <button
-            type="submit"
-            className="mt-2 flex items-center justify-center gap-2 rounded-lg bg-secondary py-2.5 text-sm font-semibold text-white hover:bg-secondary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-          >
+          <Button type="submit" className="mt-2">
             <LogIn className="size-4" aria-hidden="true" />
             Join
-          </button>
+          </Button>
         </form>
       </PopUp>
 
@@ -400,7 +364,6 @@ function Home() {
           <TextField
             id="room-name"
             label="Room name"
-            autoFocus
             maxLength={40}
             placeholder="e.g. Friday movie night"
             value={roomName}
@@ -408,15 +371,14 @@ function Home() {
             error={createError}
           />
 
-          <button
-            type="submit"
-            className="mt-2 flex items-center justify-center gap-2 rounded-lg bg-secondary py-2.5 text-sm font-semibold text-white hover:bg-secondary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-          >
+          <Button type="submit" className="mt-2">
             <Plus className="size-4" aria-hidden="true" />
             Create
-          </button>
+          </Button>
         </form>
       </PopUp>
+
+      <Toast message={toast} onDone={() => setToast("")} />
     </div>
   );
 }

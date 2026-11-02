@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import AuthLayout from "../components/AuthLayout";
+import Button from "../components/Button";
 import { TextField, PasswordField } from "../components/TextField";
 
 function SignUp() {
@@ -61,19 +62,10 @@ function SignUp() {
           error={errors.password}
         />
 
-        <button
-          type="submit"
-          className="mt-2 w-full rounded-md bg-secondary py-3 text-sm font-medium text-white hover:bg-secondary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-        >
-          Connect
-        </button>
-        <button
-          type="button"
-          onClick={() => navigate("/signin")}
-          className="w-full rounded-md border border-secondary py-3 text-sm font-medium text-secondary hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-        >
+        <Button type="submit" className="mt-2 w-full">Connect</Button>
+        <Button variant="outline" className="w-full" onClick={() => navigate("/signin")}>
           Sign in
-        </button>
+        </Button>
       </form>
     </AuthLayout>
   );

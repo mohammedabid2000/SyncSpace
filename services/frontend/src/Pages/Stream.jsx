@@ -1,9 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
-import { Globe, Info, Smile, SendHorizontal, Check } from "lucide-react";
+import { Globe, Info, Smile, SendHorizontal, Check, Share, Settings, LogOut } from "lucide-react";
 import PopUp from "../components/PopUp";
 import Logo from "../components/Logo";
 import Avatar from "../components/Avatar";
+import Badge from "../components/Badge";
+import Button from "../components/Button";
+import IconButton from "../components/IconButton";
+import StatusDot from "../components/StatusDot";
+import Toast from "../components/Toast";
+import { Tabs, TabPanel } from "../components/Tabs";
 import { TextField } from "../components/TextField";
 import yasserPhoto from "../assets/avatars/yasser.svg";
 import linaPhoto from "../assets/avatars/lina.svg";
@@ -17,9 +23,9 @@ const ROOM_LINK = `${window.location.origin}/stream`;
 const CURRENT_USER = "Yasser";
 // photo = preview data only, so the UI looks complete before the backend exists
 const participants = [
-  { name: "Yasser", host: true, photo: yasserPhoto },
-  { name: "Lina", host: false, photo: linaPhoto },
-  { name: "Adam", host: false, photo: adamPhoto },
+  { name: "Yasser", host: true, photo: yasserPhoto, online: true },
+  { name: "Lina", host: false, photo: linaPhoto, online: true },
+  { name: "Adam", host: false, photo: adamPhoto, online: true },
 ];
 const firstMessages = [
   { id: 1, author: "Yasser", text: "Ready for movie night?", time: "8:30 PM" },
@@ -30,21 +36,19 @@ const firstMessages = [
 // Emojis shown in the chat emoji panel — clicking one sends it right away
 const EMOJIS = ["😂", "😍", "😮", "😢", "😡", "👍", "👏", "🔥", "🎉", "❤️", "🍿", "🎬"];
 
-// Photo of a participant (undefined if they have none → Avatar shows the first letter)
-const photoOf = (name) => participants.find((p) => p.name === name)?.photo;
-
-function HostBadge() {
-  return <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-xs font-medium text-primary">Host</span>;
-}
+const findPerson = (name) => participants.find((p) => p.name === name);
 
 function Stream() {
   const navigate = useNavigate();
 
-  const [copied, setCopied] = useState(false); // shows a checkmark after copying the invite link
-  const [started, setStarted] = useState(false);         // VBrowser started or not
-  const [tab, setTab] = useState("chat");                // "chat" or "people"
+  const [copied, setCopied] = useState(false);   // shows a checkmark after copying the invite link
+  const [started, setStarted] = useState(false); // VBrowser started or not
+  const [tab, setTab] = useState("chat");        // "chat" or "people"
   const [messages, setMessages] = useState(firstMessages);
   const [newMessage, setNewMessage] = useState("");
+  const [toast, setToast] = useState("");        // "Room settings saved" message
+  const [profile, setProfile] = useState(null);  // name of the person whose profile popup is open
+  const [confirmLeave, setConfirmLeave] = useState(false); // "Leave this room?" popup
 
   // Room settings (what is shown on the page)
   const [roomName, setRoomName] = useState(ROOM_NAME);
@@ -88,6 +92,7 @@ function Stream() {
     setRoomName(name);
     setPeopleLimit(limit);
     closeSettings();
+    setToast("Room settings saved");
     // TODO: send { name, limit } to the backend so everyone in the room gets the new settings
   }
 
@@ -97,7 +102,7 @@ function Stream() {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, tab]);
 
-  // Copy the invite link (used by the link button in the header)
+  // Copy the invite link (used by the share button in the header)
   async function copyLink() {
     try {
       await navigator.clipboard.writeText(ROOM_LINK);
@@ -149,15 +154,21 @@ function Stream() {
     };
   }, [showEmojis]);
 
-  const isHost = (name) => participants.some((p) => p.name === name && p.host);
+  // TODO: tell the backend you left the room
+  function leaveRoom() {
+    setConfirmLeave(false);
+    navigate("/home");
+  }
+
+  const profilePerson = profile ? findPerson(profile) : null;
 
   return (
     <div className="flex min-h-screen flex-col lg:h-screen">
-      {/* ===== HEADER: logo left — settings + leave room right ===== */}
+      {/* ===== HEADER: logo + room name left — people + share / settings / leave right ===== */}
       <header className="flex items-center justify-between gap-4 border-b border-border px-6 py-4">
         {/* Left: logo + room name */}
         <div className="flex min-w-0 items-center gap-6">
-          <Logo size="lg" to="/home" />
+          <Logo size="lg" to="/home" compact />
           {/* Separator: thin vertical line between the logo and the room name */}
           <span className="hidden h-8 w-px shrink-0 bg-secondary/20 md:block" aria-hidden="true" />
           {/* The room name is the main title of the page; truncate cuts it with "…" if too long */}
@@ -166,61 +177,42 @@ function Stream() {
 
         {/* Right: people + buttons */}
         <div className="flex shrink-0 items-center gap-4">
-        {/* People: overlapping avatars (-space-x-2) + count — hidden on small screens */}
-        <div className="hidden items-center gap-2 lg:flex">
-          <div className="flex -space-x-2">
-            {participants.map((p) => (
-              <Avatar key={p.name} src={p.photo} name={p.name} className="size-9 text-sm ring-2 ring-background" />
-            ))}
+          {/* People: overlapping avatars (-space-x-2) + count — hidden on small screens */}
+          <div className="hidden items-center gap-2 lg:flex">
+            <div className="flex -space-x-2">
+              {participants.map((p) => (
+                <Avatar key={p.name} src={p.photo} name={p.name} className="size-9 text-sm ring-2 ring-background" />
+              ))}
+            </div>
+            <span className="text-sm text-muted-foreground">{participants.length} / {peopleLimit} people</span>
           </div>
-          <span className="text-sm text-muted-foreground">{participants.length} / {peopleLimit} people</span>
-        </div>
 
-        {/* Pill wrapper with a red border around the icon buttons */}
-        <div className="flex items-center gap-1 rounded-full border-2 border-primary p-1 shadow-md shadow-primary/30">
-          {/* Invite link: copies the room link, then shows a checkmark for 2 seconds */}
-          <button
-            type="button"
-            onClick={copyLink}
-            aria-label={copied ? "Invite link copied" : "Copy invite link"}
-            title={copied ? "Link copied!" : "Copy invite link"}
-            className="flex size-10 items-center justify-center rounded-full text-secondary hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring"
-          >
-            {copied ? (
-              <Check className="size-6 text-success" aria-hidden="true" />
-            ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-6" aria-hidden="true"><path d="M12 2v13"/><path d="m16 6-4-4-4 4"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/></svg>
-            )}
-          </button>
-          {/* Screen readers announce "Invite link copied" when it changes */}
-          <span className="sr-only" aria-live="polite">{copied ? "Invite link copied" : ""}</span>
+          {/* Pill wrapper with a red border around the icon buttons */}
+          <div className="flex items-center gap-1 rounded-full border-2 border-primary p-1 shadow-md shadow-primary/30">
+            {/* Invite link: copies the room link, then shows a checkmark for 2 seconds */}
+            <IconButton label={copied ? "Invite link copied" : "Copy invite link"} onClick={copyLink}>
+              {copied ? (
+                <Check className="size-6 text-success" aria-hidden="true" />
+              ) : (
+                <Share className="size-6" aria-hidden="true" />
+              )}
+            </IconButton>
+            {/* Screen readers announce "Invite link copied" when it changes */}
+            <span className="sr-only" aria-live="polite">{copied ? "Invite link copied" : ""}</span>
 
-          {/* Opens the room settings popup */}
-          <button
-            type="button"
-            onClick={openSettings}
-            aria-label="Room settings"
-            className="flex size-10 items-center justify-center rounded-full text-secondary hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-5" aria-hidden="true"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>
-          </button>
+            <IconButton label="Room settings" onClick={openSettings}>
+              <Settings className="size-5" aria-hidden="true" />
+            </IconButton>
 
-          {/* Leave room → back to the home page */}
-          <button
-            type="button"
-            onClick={() => navigate("/home")}
-            aria-label="Leave room"
-            className="flex size-10 items-center justify-center rounded-full text-secondary hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-5" aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75" />
-            </svg>
-          </button>
-        </div>
+            {/* Leave room → asks for confirmation first */}
+            <IconButton label="Leave room" onClick={() => setConfirmLeave(true)}>
+              <LogOut className="size-5" aria-hidden="true" />
+            </IconButton>
+          </div>
         </div>
       </header>
 
-      {/* ===== BODY: expanded player column + chat column ===== */}
+      {/* ===== BODY: player column + chat column ===== */}
       <div className="grid flex-1 lg:min-h-0 lg:grid-cols-[minmax(0,1fr)_22rem]">
 
         {/* ----- LEFT: player + status ----- */}
@@ -241,17 +233,13 @@ function Stream() {
                 <p className="text-white/70">Starting VBrowser…</p>
               ) : (
                 <div className="flex max-w-md flex-col items-center gap-3 px-6 text-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="size-16 md:size-20" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+                  <Globe className="size-16 md:size-20" strokeWidth={1.5} aria-hidden="true" />
                   <h3 className="text-2xl font-bold md:text-3xl">Your shared browser is ready to start</h3>
                   <p className="text-white/80">Start VBrowser to browse and watch together.</p>
                   {/* TODO: ask the backend to start the Neko container for this room */}
-                  <button
-                    type="button"
-                    onClick={() => setStarted(true)}
-                    className="mt-2 rounded-lg bg-primary px-8 py-3 font-semibold hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-                  >
+                  <Button variant="primary" size="base" onClick={() => setStarted(true)} className="mt-2">
                     Start VBrowser
-                  </button>
+                  </Button>
                   <p className="text-sm text-white/70">The host starts the browser for everyone.</p>
                 </div>
               )}
@@ -273,118 +261,116 @@ function Stream() {
 
         {/* ----- RIGHT: Chat / People ----- */}
         <aside className="flex h-[32rem] flex-col border-t border-border bg-card lg:h-auto lg:min-h-0 lg:border-l lg:border-t-0">
-            {/* Tabs */}
-            <div role="tablist" className="flex border-b border-border px-4">
-              {[
-                { id: "chat", label: "Chat" },
-                { id: "people", label: `People (${participants.length})` },
-              ].map((t) => (
-                <button
-                  key={t.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={tab === t.id}
-                  onClick={() => setTab(t.id)}
-                  className={`-mb-px border-b-2 px-4 py-3 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-ring ${
-                    tab === t.id ? "border-primary text-secondary" : "border-transparent text-muted-foreground hover:text-secondary"
-                  }`}
-                >
-                  {t.label}
-                </button>
-              ))}
-            </div>
+          {/* Tabs: click, or use the ← → keys */}
+          <Tabs
+            idPrefix="room"
+            value={tab}
+            onChange={setTab}
+            className="px-4"
+            tabs={[
+              { id: "chat", label: "Chat" },
+              { id: "people", label: `People (${participants.length})` },
+            ]}
+          />
 
-            {tab === "chat" ? (
-              <>
-                {/* Messages */}
-                <ul className="flex-1 space-y-5 overflow-y-auto p-4">
-                  {messages.map((m) => (
-                    <li key={m.id} className="flex gap-3">
-                      <Avatar src={photoOf(m.author)} name={m.author} />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold text-secondary">{m.author}</span>
-                          {isHost(m.author) && <HostBadge />}
-                          <span className="ml-auto text-xs text-muted-foreground">{m.time}</span>
-                        </div>
-                        <p className="mt-1 w-fit max-w-full break-words rounded-xl bg-background px-3 py-2 text-sm text-secondary">
-                          {m.text}
-                        </p>
+          {tab === "chat" ? (
+            <TabPanel idPrefix="room" id="chat" className="flex min-h-0 flex-1 flex-col">
+              {/* Messages */}
+              <ul className="flex-1 space-y-5 overflow-y-auto p-4">
+                {messages.map((m) => (
+                  <li key={m.id} className="flex gap-3">
+                    <Avatar src={findPerson(m.author)?.photo} name={m.author} />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-secondary">{m.author}</span>
+                        {findPerson(m.author)?.host && <Badge>Host</Badge>}
+                        <span className="ml-auto text-xs text-muted-foreground">{m.time}</span>
                       </div>
-                    </li>
-                  ))}
-                  <li ref={chatEndRef} aria-hidden="true" />
-                </ul>
-
-                {/* Message input */}
-                <form onSubmit={sendMessage} className="flex items-center gap-2 border-t border-border p-4">
-                  <div className="flex flex-1 items-center rounded-xl border border-input bg-background pr-2 focus-within:ring-2 focus-within:ring-ring">
-                    <label htmlFor="chat-message" className="sr-only">Message</label>
-                    <input
-                      id="chat-message"
-                      type="text"
-                      placeholder="Send a message…"
-                      value={newMessage}
-                      onChange={(e) => setNewMessage(e.target.value)}
-                      className="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-sm outline-none"
-                    />
-                    {/* Emoji button + panel. The panel floats ABOVE the input (bottom-full) */}
-                    <div ref={emojiPanelRef} className="relative">
-                      <button
-                        type="button"
-                        onClick={() => setShowEmojis(!showEmojis)}
-                        aria-label="Send an emoji"
-                        aria-expanded={showEmojis}
-                        aria-controls="emoji-panel"
-                        className={`rounded-md p-1 hover:text-secondary focus-visible:outline-2 focus-visible:outline-ring ${showEmojis ? "text-secondary" : "text-muted-foreground"}`}
-                      >
-                        <Smile className="size-5" aria-hidden="true" />
-                      </button>
-
-                      {showEmojis && (
-                        <div
-                          id="emoji-panel"
-                          role="group"
-                          aria-label="Emojis"
-                          className="absolute bottom-full right-0 z-20 mb-3 grid w-60 grid-cols-6 gap-1 rounded-xl border border-accent bg-card p-2 shadow-lg"
-                        >
-                          {EMOJIS.map((emoji) => (
-                            <button
-                              key={emoji}
-                              type="button"
-                              onClick={() => sendEmoji(emoji)}
-                              aria-label={`Send ${emoji}`}
-                              className="flex size-9 items-center justify-center rounded-lg text-xl hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring"
-                            >
-                              {emoji}
-                            </button>
-                          ))}
-                        </div>
-                      )}
+                      <p className="mt-1 w-fit max-w-full break-words rounded-xl bg-background px-3 py-2 text-sm text-secondary">
+                        {m.text}
+                      </p>
                     </div>
+                  </li>
+                ))}
+                <li ref={chatEndRef} aria-hidden="true" />
+              </ul>
+
+              {/* Message input */}
+              <form onSubmit={sendMessage} className="flex items-center gap-2 border-t border-border p-4">
+                <div className="flex flex-1 items-center rounded-xl border border-input bg-background pr-2 focus-within:ring-2 focus-within:ring-ring">
+                  <label htmlFor="chat-message" className="sr-only">Message</label>
+                  <input
+                    id="chat-message"
+                    type="text"
+                    placeholder="Send a message…"
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    className="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-sm outline-none"
+                  />
+                  {/* Emoji button + panel. The panel floats ABOVE the input (bottom-full) */}
+                  <div ref={emojiPanelRef} className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setShowEmojis(!showEmojis)}
+                      aria-label="Send an emoji"
+                      aria-expanded={showEmojis}
+                      aria-controls="emoji-panel"
+                      className={`rounded-md p-1 hover:text-secondary focus-visible:outline-2 focus-visible:outline-ring ${showEmojis ? "text-secondary" : "text-muted-foreground"}`}
+                    >
+                      <Smile className="size-5" aria-hidden="true" />
+                    </button>
+
+                    {showEmojis && (
+                      <div
+                        id="emoji-panel"
+                        role="group"
+                        aria-label="Emojis"
+                        className="absolute bottom-full right-0 z-20 mb-3 grid w-60 grid-cols-6 gap-1 rounded-xl border border-accent bg-card p-2 shadow-lg"
+                      >
+                        {EMOJIS.map((emoji) => (
+                          <button
+                            key={emoji}
+                            type="button"
+                            onClick={() => sendEmoji(emoji)}
+                            aria-label={`Send ${emoji}`}
+                            className="flex size-9 items-center justify-center rounded-lg text-xl hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring"
+                          >
+                            {emoji}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                  <button
-                    type="submit"
-                    aria-label="Send message"
-                    className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary text-white hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-                  >
-                    <SendHorizontal className="size-5" aria-hidden="true" />
-                  </button>
-                </form>
-              </>
-            ) : (
-              /* People list */
-              <ul className="flex-1 space-y-4 overflow-y-auto p-4">
+                </div>
+                <IconButton type="submit" label="Send message" variant="primary" size="lg">
+                  <SendHorizontal className="size-5" aria-hidden="true" />
+                </IconButton>
+              </form>
+            </TabPanel>
+          ) : (
+            <TabPanel idPrefix="room" id="people" className="min-h-0 flex-1 overflow-y-auto p-4">
+              {/* People list — click a person to see their profile */}
+              <ul className="space-y-1">
                 {participants.map((p) => (
-                  <li key={p.name} className="flex items-center gap-3">
-                    <Avatar src={p.photo} name={p.name} />
-                    <span className="font-semibold text-secondary">{p.name}</span>
-                    {p.host && <HostBadge />}
-                    <span className="ml-auto size-2.5 rounded-full bg-success" aria-label="Online" />
+                  <li key={p.name}>
+                    <button
+                      type="button"
+                      onClick={() => setProfile(p.name)}
+                      aria-label={`View ${p.name}'s profile`}
+                      className="flex w-full items-center gap-3 rounded-xl p-2 text-left hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring"
+                    >
+                      <Avatar src={p.photo} name={p.name} />
+                      <span className="font-semibold text-secondary">{p.name}</span>
+                      {p.host && <Badge>Host</Badge>}
+                      <span className="ml-auto">
+                        <StatusDot online={p.online} showText={false} />
+                      </span>
+                    </button>
                   </li>
                 ))}
               </ul>
-            )}
+            </TabPanel>
+          )}
         </aside>
       </div>
 
@@ -395,45 +381,57 @@ function Stream() {
           <TextField
             id="settings-room-name"
             label="Room name"
-            autoFocus
             maxLength={40}
             value={draftName}
             onChange={setDraftName}
           />
-
-          {/* People limit */}
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="settings-people-limit" className="text-sm font-medium text-secondary">
-              People limit
-            </label>
-            <input
-              id="settings-people-limit"
-              type="number"
-              min={minPeople}
-              max={MAX_PEOPLE}
-              step={1}
-              value={draftLimit}
-              onChange={(e) => setDraftLimit(e.target.value)}
-              aria-describedby="people-limit-hint"
-              className="w-32 rounded-md border border-input bg-background px-3 py-2.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            />
-            <p id="people-limit-hint" className="text-xs text-muted-foreground">
-              Between {minPeople} and {MAX_PEOPLE}. {participants.length} people are in the room now.
-            </p>
-          </div>
+          <TextField
+            id="settings-people-limit"
+            label="People limit"
+            type="number"
+            min={minPeople}
+            max={MAX_PEOPLE}
+            step={1}
+            value={draftLimit}
+            onChange={setDraftLimit}
+            hint={`Between ${minPeople} and ${MAX_PEOPLE}. ${participants.length} people are in the room now.`}
+          />
 
           {settingsError && (
             <p role="alert" className="text-sm text-destructive">{settingsError}</p>
           )}
 
-          <button
-            type="submit"
-            className="mt-1 rounded-lg bg-secondary py-2.5 text-sm font-semibold text-white hover:bg-secondary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-          >
-            Save
-          </button>
+          <Button type="submit" className="mt-1">Save</Button>
         </form>
       </PopUp>
+
+      {/* ===== PERSON PROFILE POPUP (click someone in the People tab) ===== */}
+      <PopUp showPopUp={profilePerson !== null} closePopUp={() => setProfile(null)} title="Profile">
+        {profilePerson && (
+          <div className="mt-5 flex flex-col items-center gap-2 text-center">
+            <Avatar src={profilePerson.photo} name={profilePerson.name} className="size-24 text-3xl" />
+            <p className="mt-2 flex items-center gap-2 text-xl font-bold text-secondary">
+              {profilePerson.name}
+              {profilePerson.host && <Badge>Host</Badge>}
+            </p>
+            <StatusDot online={profilePerson.online} />
+          </div>
+        )}
+      </PopUp>
+
+      {/* ===== LEAVE CONFIRMATION POPUP ===== */}
+      <PopUp showPopUp={confirmLeave} closePopUp={() => setConfirmLeave(false)} title="Leave this room?">
+        <p className="mt-2 text-muted-foreground">You can come back later with the invite link.</p>
+        <div className="mt-6 flex justify-end gap-3">
+          <Button variant="subtle" onClick={() => setConfirmLeave(false)}>Cancel</Button>
+          <Button variant="danger" onClick={leaveRoom}>
+            <LogOut className="size-4" aria-hidden="true" />
+            Leave room
+          </Button>
+        </div>
+      </PopUp>
+
+      <Toast message={toast} onDone={() => setToast("")} />
     </div>
   );
 }
