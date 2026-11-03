@@ -22,7 +22,7 @@ To ensure clean ownership boundaries and minimize merge conflicts, the project i
     *   **Responsibilities:** Implements JWT authentication, refresh token rotation, and password hashing. Manages RBAC (global and per-room roles) and OAuth 2.0 (42/Google/GitHub). Integrates HashiCorp Vault for secrets management.
     *   **Focus:** Security, permissions, and protecting sensitive credentials.
 
-*   **DevOps (You): The Building Inspector & Electrician.**
+*   **Dev 5 (DevOps): The Building Inspector & Electrician.**
     *   **Responsibilities:** Manages Docker Compose orchestration, Nginx reverse proxy, and WAF/ModSecurity. Sets up the ELK stack for centralized logging and monitors overall system health.
     *   **Focus:** Infrastructure, perimeter security, and ensuring all containers communicate without crashing.
 
