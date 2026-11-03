@@ -29,10 +29,12 @@ make logs
 make down
 ```
 
-The proxy uses the OWASP image's maintained Nginx/ModSecurity/CRS templates. Compose
-sets its backend to frontend:3000, maps host 8080 to container 8080 and host 8443 to container 8443, and mounts the
-local certificate/key. Legacy custom Nginx and ModSecurity files remain in the
-repository but are not included in this test image. Logs go to container output.
+The proxy keeps the OWASP image's main Nginx configuration and ModSecurity/CRS
+integration. Its Dockerfile copies our tracked `infra/nginx/conf.d/default.conf.template`
+over the image's site template; startup renders it into the active site configuration.
+Compose sets its backend to frontend:3000, maps host ports 8080/8443, and mounts
+the local certificate/key. Older `infra/nginx/nginx.conf`, `conf.d/default.conf`
+and local ModSecurity files remain unused by this image. Logs go to container output.
 `/healthz` checks the proxy itself; `/` checks delivery from the frontend.
 
 This configuration does not provide backend API, messaging or orchestrator routes.

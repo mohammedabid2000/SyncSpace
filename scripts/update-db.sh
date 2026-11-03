@@ -17,12 +17,12 @@ env_file="${1:-.env.example}"
 compose=(docker compose --env-file "$env_file")
 
 # Compose resolves the selected environment file, including variable expansion.
-# Keep configuration/passwords in memory; never print them or enable shell tracing.
+# Keep configuration in memory; never print it or enable shell tracing.
 config="$("${compose[@]}" config --format json)"
 db_user="$(printf '%s' "$config" | jq -er '.services.postgres.environment.POSTGRES_USER | select(length > 0)')"
 db_name="$(printf '%s' "$config" | jq -er '.services.postgres.environment.POSTGRES_DB | select(length > 0)')"
-db_password="$(printf '%s' "$config" | jq -er '.services.postgres.environment.POSTGRES_PASSWORD | select(length > 0 and (test("[\\r\\n]") | not))')"
-[[ "$db_password" != *$'\n'* && "$db_password" != *$'\r'* ]] || fail 'Passwords must not contain newlines.'
+printf '%s' "$config" | jq -e '.services.postgres.environment.POSTGRES_PASSWORD | select(length > 0 and (test("[\r\n]") | not))' >/dev/null ||
+    fail 'POSTGRES_PASSWORD must be nonempty and contain no newlines.'
 
 # Renaming a role/database needs a migration, not a container environment change.
 container_id="$("${compose[@]}" ps --all --quiet postgres)"
@@ -38,13 +38,15 @@ running_services="$("${compose[@]}" ps --status running --services)"
 # Compose keeps the named volume even when it recreates the container.
 "${compose[@]}" up -d --wait postgres
 
-# Use local socket administration. psql's password command hashes the secret.
-# Pass it twice on stdin, not inside SQL or command-line arguments.
+# Read the actual container password, not Compose's escaped configuration output.
+# Local socket administration lets psql hash the new password before ALTER ROLE.
+# Feed it through stdin, never interpolate it into SQL or command-line arguments.
 printf 'Applying configured PostgreSQL password; keeping existing data.\n'
-printf '%s\n%s\n' "$db_password" "$db_password" |
-    "${compose[@]}" exec -T postgres psql -X -w \
-        -h /var/run/postgresql -U "$db_user" -d postgres \
-        -v ON_ERROR_STOP=1 -c '\password'
+"${compose[@]}" exec -T postgres sh -ec '
+    printf "%s\n%s\n" "$POSTGRES_PASSWORD" "$POSTGRES_PASSWORD" |
+        psql -X -w -h /var/run/postgresql -U "$POSTGRES_USER" -d postgres \
+            -v ON_ERROR_STOP=1 -c "\\password"
+'
 
 # Verify password authentication over TCP, not the trusted local socket.
 "${compose[@]}" exec -T postgres sh -ec \

@@ -7,12 +7,15 @@ const SIZES = {
 };
 
 // SyncSpace logo + name. With "to", it's a link (e.g. back to the home page).
-function Logo({ size = "md", to, className = "" }) {
+// compact: on phones only the logo image is shown (the name comes back from 640px), to save space.
+function Logo({ size = "md", to, compact = false, className = "" }) {
   const s = SIZES[size];
   const content = (
     <>
       <img src="/syncspace-logo.svg" alt="" className={`${s.img} w-auto`} />
-      <span className={`${s.text} font-bold tracking-tight text-secondary`}>SyncSpace</span>
+      <span className={`${s.text} font-bold tracking-tight text-secondary ${compact ? "sr-only sm:not-sr-only" : ""}`}>
+        SyncSpace
+      </span>
     </>
   );
   const classes = `flex shrink-0 items-center ${s.gap} ${className}`;
