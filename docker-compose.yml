@@ -17,7 +17,7 @@ services:
   # Keep the image's working ModSecurity/CRS configuration and templates.
   nginx:
     build: ./infra/nginx
-    container_name: syncspace-nginx
+    # container_name: syncspace-nginx
     restart: unless-stopped
     ports:
       - "127.0.0.1:${HTTP_PORT:-8080}:8080"

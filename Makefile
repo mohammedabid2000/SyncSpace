@@ -6,7 +6,7 @@ HTTP_URL ?= http://localhost:8080
 HTTPS_URL ?= https://localhost:8443
 
 .DEFAULT_GOAL := up
-.PHONY: up down logs re config ps test db-up db-test
+.PHONY: up down logs re config ps test db-up db-test update-db
 
 up:
 	$(COMPOSE) up -d --build $(SERVICES)
@@ -39,3 +39,7 @@ db-up:
 
 db-test:
 	$(COMPOSE) exec -T postgres sh -ec 'PGPASSWORD="$$POSTGRES_PASSWORD" psql -h postgres -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" -v ON_ERROR_STOP=1 -c "SELECT current_database(), current_user, 1 AS connection_ok;"'
+
+# Apply the configured password without deleting PostgreSQL data.
+update-db:
+	bash scripts/update-db.sh "$(ENV_FILE)"

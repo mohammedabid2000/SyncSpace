@@ -11,6 +11,8 @@
 
 #### Prometheus overview https://prometheus.io/docs/introduction/overview/!
 
+#### WAFModsecurity main repo and documentation https://github.com/owasp-modsecurity/ModSecurity-nginx
+
 Project architecture :
 ![alt text](pics/arch.png)
 

@@ -57,3 +57,34 @@ application configuration, and remain intact.
 References:
 - https://hub.docker.com/_/postgres
 - https://github.com/prometheus-community/postgres_exporter
+
+## Update the configured database password
+
+Requires Bash, jq, Docker and Compose v2. Edit POSTGRES_PASSWORD in the selected
+`.env` file (or `.env.example` when no `.env` exists), then run:
+
+```sh
+make update-db
+make db-test
+# To explicitly select a different file:
+make update-db ENV_FILE=.env.example
+```
+
+This command synchronizes the PostgreSQL role password with the resolved Compose
+configuration, recreates the database container when its configuration changes,
+checks password-authenticated TCP access, and refreshes the exporter if it was
+already running. It preserves the existing named volume, tables and records.
+There is a brief database interruption if the container needs to be recreated.
+Other application clients must also reload their connection credentials when
+integrated; the current backend service is still commented out.
+
+The command refuses POSTGRES_USER or POSTGRES_DB changes on an existing container.
+It uses local Unix-socket administration supported by the official development
+image. If local authentication has been hardened to require an unavailable old
+password, it fails; it does not weaken authentication or erase the volume.
+Passwords are supplied to psql through stdin with its password command rather
+than interpolated into SQL or printed in shell commands.
+
+This is a credential update, not a schema migration, database rename or import of
+new application data. Those require migrations or a separate explicit import.
+Deleting/replacing the data volume would reset the database rather than update it.
