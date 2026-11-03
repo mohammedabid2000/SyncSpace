@@ -54,3 +54,9 @@ in the environment file if necessary; use matching HTTP_URL/HTTPS_URL overrides
 for `make test`. Published ports bind to loopback for this local test.
 
 For PostgreSQL connection settings and database tests, see [postgresql.md](postgresql.md).
+
+Local startup requires OpenSSL. `make up` runs `make certs`, which creates missing
+TLS files in `infra/nginx/certs/`. Certificates and private keys are ignored by Git.
+Use `make certs FORCE=1` to rotate the development pair, then recreate Nginx with
+`docker compose --env-file .env.example up -d --force-recreate nginx`.
+See [ci-cd.md](ci-cd.md) for CI checks and the current deployment-template status.

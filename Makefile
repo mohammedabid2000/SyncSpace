@@ -6,9 +6,9 @@ HTTP_URL ?= http://localhost:8080
 HTTPS_URL ?= https://localhost:8443
 
 .DEFAULT_GOAL := up
-.PHONY: up down logs re config ps test db-up db-test update-db
+.PHONY: up down logs re config ps test db-up db-test update-db certs
 
-up:
+up: certs
 	$(COMPOSE) up -d --build $(SERVICES)
 
 down:
@@ -17,7 +17,7 @@ down:
 logs:
 	$(COMPOSE) logs -f $(SERVICES)
 
-re:
+re: certs
 	$(COMPOSE) up -d --build --force-recreate $(SERVICES)
 
 config:
@@ -43,3 +43,7 @@ db-test:
 # Apply the configured password without deleting PostgreSQL data.
 update-db:
 	bash scripts/update-db.sh "$(ENV_FILE)"
+
+# FORCE=1 rotates the local certificate; recreate nginx after rotation.
+certs:
+	bash scripts/generate-local-certs.sh $(if $(filter 1,$(FORCE)),--force,)
