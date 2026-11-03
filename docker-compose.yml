@@ -1,81 +1,88 @@
-version: '3.8'
+# Default Makefile target starts frontend, nginx and PostgreSQL for local development.
 
 networks:
   database:
-    internal: true   # No external access — only backend services can reach Mongo
+    internal: true
   frontend:
   backend:
 
 volumes:
-  mongo_data:
+  postgres_data:
   vault_data:
   elasticsearch_data:
+  prometheus_data:
+  grafana_data:
 
 services:
-  # ---------- DATABASE ----------
-  mongodb:
-    image: mongo:7.0
-    container_name: syncspace-mongo
+  # Keep the image's working ModSecurity/CRS configuration and templates.
+  nginx:
+    build: ./infra/nginx
+    # container_name: syncspace-nginx
     restart: unless-stopped
-    env_file: .env
+    ports:
+      - "127.0.0.1:${HTTP_PORT:-8080}:8080"
+      - "127.0.0.1:${HTTPS_PORT:-8443}:8443"
     environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
-      MONGO_INITDB_DATABASE: ${MONGO_DB_NAME}
+      BACKEND: http://frontend:3000
+      HTTPS_PORT: ${HTTPS_PORT:-8443}
+      SERVER_NAME: localhost
+      NGINX_ALWAYS_TLS_REDIRECT: "on"
+      MODSEC_RULE_ENGINE: "On"
+      SSL_CERT_FILE: /etc/nginx/conf/server.crt
+      SSL_CERT_KEY_FILE: /etc/nginx/conf/server.key
+      SSL_OCSP_STAPLING: "off"
     volumes:
-      - mongo_data:/data/db
+      - ./infra/nginx/certs/server.crt:/etc/nginx/conf/server.crt:ro
+      - ./infra/nginx/certs/server.key:/etc/nginx/conf/server.key:ro
+    depends_on:
+      frontend:
+        condition: service_healthy
+    networks:
+      - frontend
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "--insecure", "https://localhost:8443/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ---------- POSTGRESQL ----------
+  postgres:
+    image: postgres:17-alpine
+    container_name: syncspace-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER in your environment file}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in your environment file}
+      POSTGRES_DB: ${POSTGRES_DB:?Set POSTGRES_DB in your environment file}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
     networks:
       - database
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 20s
 
-  # ---------- BACKEND (Dev 3 & Dev 4) ----------
-  backend:
-    build: ./services/backend
-    container_name: syncspace-backend
+  # Optional metrics service; start alongside Prometheus when testing monitoring.
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.18.1
+    container_name: syncspace-postgres-exporter
     restart: unless-stopped
-    env_file: .env
     environment:
-      MONGO_URI: mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASSWORD}@mongodb:27017/${MONGO_DB_NAME}?authSource=admin
+      DATA_SOURCE_URI: "postgres:5432/${POSTGRES_DB}?sslmode=disable"
+      DATA_SOURCE_USER: ${POSTGRES_USER}
+      DATA_SOURCE_PASS: ${POSTGRES_PASSWORD}
     depends_on:
-      mongodb:
+      postgres:
         condition: service_healthy
     networks:
-      - backend
       - database
-
-  # ---------- FRONTEND (Dev 1) ----------
-  frontend:
-    build: ./services/frontend
-    container_name: syncspace-frontend
-    restart: unless-stopped
-    env_file: .env
-    ports:
-      - "3000:3000"
-    networks:
-      - frontend
       - backend
 
-  # ---------- NEKO ORCHESTRATOR (Dev 2) ----------
-  # Note: Neko containers are spawned dynamically, not defined here.
-  # This service is the API that talks to the Docker daemon.
-  orchestrator:
-    build: ./services/orchestrator
-    container_name: syncspace-orchestrator
-    restart: unless-stopped
-    env_file: .env
-    volumes:
-      # WARNING: For production, replace this with a docker-socket-proxy.
-      # This is fine for local dev only.
-      - /var/run/docker.sock:/var/run/docker.sock
-    networks:
-      - backend
-
-  # ---------- VAULT (Dev 4) ----------
+  # ---------- VAULT ----------
   vault:
     image: hashicorp/vault:1.15
     container_name: syncspace-vault
@@ -91,3 +98,159 @@ services:
       - backend
     ports:
       - "8200:8200"
+        # ---------- ELASTICSEARCH ----------
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: syncspace-elasticsearch
+    restart: unless-stopped
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=true
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD:-changeme_elastic_password}
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s -u elastic:${ELASTIC_PASSWORD:-changeme_elastic_password} http://localhost:9200/_cluster/health | grep -q green"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ---------- LOGSTASH ----------
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.11.0
+    container_name: syncspace-logstash
+    restart: unless-stopped
+    volumes:
+      - ./infra/elk/logstash/pipeline:/usr/share/logstash/pipeline
+      - ./infra/elk/logstash/config:/usr/share/logstash/config
+    environment:
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD:-changeme_elastic_password}
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - backend
+
+  # ---------- KIBANA ----------
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.0
+    container_name: syncspace-kibana
+    restart: unless-stopped
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - ELASTICSEARCH_USERNAME=kibana_system
+      - ELASTICSEARCH_PASSWORD=${KIBANA_PASSWORD:-changeme_kibana_password}
+    ports:
+      - "5601:5601"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - backend
+    # ---------- PROMETHEUS ----------
+  prometheus:
+    image: prom/prometheus:v2.48.0
+    container_name: syncspace-prometheus
+    restart: unless-stopped
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./infra/prometheus/alerts.yml:/etc/prometheus/alerts.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.retention.time=15d'
+    networks:
+      - backend
+    ports:
+      - "9090:9090"
+
+  # ---------- GRAFANA ----------
+  grafana:
+    image: grafana/grafana:10.2.0
+    container_name: syncspace-grafana
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-changeme_grafana_password}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./infra/grafana/dashboards:/etc/grafana/provisioning/dashboards
+    networks:
+      - backend
+    ports:
+      - "3001:3000"
+    depends_on:
+      - prometheus
+
+  # ---------- NODE EXPORTER ----------
+  node-exporter:
+    image: prom/node-exporter:v1.7.0
+    container_name: syncspace-node-exporter
+    restart: unless-stopped
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+    networks:
+      - backend
+  # ---------- CADVISOR ----------
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.47.2
+    container_name: syncspace-cadvisor
+    restart: unless-stopped
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    networks:
+      - backend
+
+  # ---------- BACKEND (Uncomment when aelbouss creates the folder) ----------
+  # backend:
+  #   build: ./services/backend
+  #   container_name: syncspace-backend
+  #   restart: unless-stopped
+  #   env_file: .env
+  #   environment:
+  #     DATABASE_URL: ${DATABASE_URL}
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #   networks:
+  #     - backend
+  #     - database
+
+  # Production Vite build served by the frontend's own Nginx on port 3000.
+  frontend:
+    build: ./services/frontend
+    container_name: syncspace-frontend
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:3000"
+    networks:
+      - frontend
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1:3000/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ---------- ORCHESTRATOR (Uncomment when Hamza creates the folder) ----------
+  # orchestrator:
+  #   build: ./services/orchestrator
+  #   container_name: syncspace-orchestrator
+  #   restart: unless-stopped
+  #   env_file: .env
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock
+  #   networks:
+  #     - backend

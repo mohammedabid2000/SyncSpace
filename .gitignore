@@ -1,0 +1,6 @@
+.env
+node_modules
+
+# Generate TLS material locally; never commit private keys.
+/infra/nginx/certs/*.key
+/infra/nginx/certs/*.crt
