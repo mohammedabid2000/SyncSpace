@@ -46,16 +46,33 @@ describe('SessionsService', () => {
 
   it('starts a browser when creating a session and stops it when deleting', async () => {
     const session = await service.create();
-    expect(session).toEqual({
+    expect(session).toMatchObject({
       id: 1,
       status: 'created',
       containerId: 'neko-container-1',
       httpPort: 8080,
       udpPort: 55000,
     });
-    expect(startLocal).toHaveBeenCalledWith(8080, 55000, 1);
-    await expect(service.get(session.id)).resolves.toEqual(session);
+    expect(session.credentials.ownerPassword).toMatch(/^[0-9a-f]{64}$/);
+    expect(session.credentials.viewerPassword).toMatch(/^[0-9a-f]{64}$/);
+    expect(session.credentials.ownerPassword).not.toBe(session.credentials.viewerPassword);
 
+    expect(startLocal).toHaveBeenCalledWith(
+      8080,
+      55000,
+      1,
+      session.credentials.ownerPassword,
+      session.credentials.viewerPassword,
+    );
+    const stored = await service.get(session.id);
+    expect(stored).toEqual({
+      id: 1,
+      status: 'created',
+      containerId: 'neko-container-1',
+      httpPort: 8080,
+      udpPort: 55000,
+    });
+    expect(await service.list()).toEqual([stored]);
     await service.delete(session.id);
     expect(stopLocal).toHaveBeenCalledWith('neko-container-1');
     await expect(service.list()).resolves.toEqual([]);
@@ -65,8 +82,15 @@ describe('SessionsService', () => {
     const first = await service.create();
     const second = await service.create();
     expect(second).toMatchObject({ id: 2, httpPort: 8081, udpPort: 55001 });
-    expect(startLocal).toHaveBeenNthCalledWith(2, 8081, 55001, 2);
-
+    expect(startLocal).toHaveBeenNthCalledWith(
+      2,
+      8081,
+      55001,
+      2,
+      second.credentials.ownerPassword,
+      second.credentials.viewerPassword,
+    );
+    expect(first.credentials.ownerPassword).not.toBe(second.credentials.ownerPassword);
     await service.delete(first.id);
     const third = await service.create();
     expect(third).toMatchObject({ id: 3, httpPort: 8080, udpPort: 55000 });

@@ -9,6 +9,8 @@ export class NekoService {
     httpPort: number,
     udpPort: number,
     sessionId: number,
+    ownerPassword: string,
+    viewerPassword: string,
   ): Promise<string> {
     const id = await this.dockerService.startContainer({
       Image: 'ghcr.io/m1k1o/neko/firefox:latest',
@@ -21,8 +23,10 @@ export class NekoService {
       Env: [
         `NEKO_WEBRTC_UDPMUX=${udpPort}`,
         'NEKO_WEBRTC_NAT1TO1=127.0.0.1',
-        'NEKO_MEMBER_MULTIUSER_USER_PASSWORD=neko',
-        'NEKO_MEMBER_MULTIUSER_ADMIN_PASSWORD=admin',
+        `NEKO_MEMBER_MULTIUSER_USER_PASSWORD=${viewerPassword}`,
+        'NEKO_MEMBER_MULTIUSER_USER_PROFILE={"can_login":true,"can_connect":true,"can_watch":true,"can_host":false,"can_share_media":false,"can_access_clipboard":false}',
+        `NEKO_MEMBER_MULTIUSER_ADMIN_PASSWORD=${ownerPassword}`,
+        'NEKO_MEMBER_MULTIUSER_ADMIN_PROFILE={"is_admin":false,"can_login":true,"can_connect":true,"can_watch":true,"can_host":true,"can_share_media":false,"can_access_clipboard":false}',
       ],
       ExposedPorts: {
         '8080/tcp': {},

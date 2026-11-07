@@ -4,6 +4,7 @@ import {
   ServiceUnavailableException,
   OnModuleInit,
 } from '@nestjs/common';
+import { randomBytes } from 'node:crypto';
 import { NekoService } from '../neko/neko.service.js';
 
 const HTTP_PORT_START = 8080;
@@ -16,6 +17,13 @@ type Session = {
   containerId: string;
   httpPort: number;
   udpPort: number;
+};
+
+type CreatedSession = Session & {
+  credentials: {
+    ownerPassword: string;
+    viewerPassword: string;
+  };
 };
 
 @Injectable()
@@ -40,8 +48,10 @@ export class SessionsService implements OnModuleInit {
     return this.sessions;
   }
 
-  async create(): Promise<Session> {
+  async create(): Promise<CreatedSession> {
     await this.removeStoppedSessions();
+    const ownerPassword = randomBytes(32).toString('hex');
+    const viewerPassword = randomBytes(32).toString('hex');
     const slot = this.reserveSlot();
     const httpPort = HTTP_PORT_START + slot;
     const udpPort = UDP_PORT_START + slot;
@@ -53,6 +63,8 @@ export class SessionsService implements OnModuleInit {
         httpPort,
         udpPort,
         sessionId,
+        ownerPassword,
+        viewerPassword,
       );
     } catch (error) {
       this.usedSlots.delete(slot);
@@ -68,7 +80,10 @@ export class SessionsService implements OnModuleInit {
     };
 
     this.sessions.push(session);
-    return session;
+    return {
+      ...session,
+      credentials: { ownerPassword, viewerPassword },
+    };
   }
 
   async get(id: number): Promise<Session> {

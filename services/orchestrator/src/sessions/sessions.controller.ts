@@ -6,8 +6,12 @@ import {
   Delete,
   HttpCode,
   ParseIntPipe,
+  UseGuards,
 } from '@nestjs/common';
 import { SessionsService } from './sessions.service.js';
+import { OrchestratorTokenGuard } from './orchestrator-token.guard.js';
+
+@UseGuards(OrchestratorTokenGuard)
 @Controller('sessions')
 export class SessionsController {
   constructor(private readonly sessionsService: SessionsService) {}
