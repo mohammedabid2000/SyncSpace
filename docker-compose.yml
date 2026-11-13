@@ -2,7 +2,8 @@ version: '3.8'
 
 networks:
   database:
-    internal: true   # No external access — only backend services can reach Mongo
+    internal: true
+    driver : bridge
   frontend:
   backend_network:
     internal: true
@@ -30,25 +31,16 @@ services:
         - postgres_data:/var/lib/postgresql/data
       networks:
         - database
-      healthcheck:
-        test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
-        interval: 10s
-        timeout: 5s
-        retries: 5
-        start_period: 20s
 
   # ---------- BACKEND (Dev 3 & Dev 4) ----------
   backend:
       build: ./services/backend
+      depend_on: postgres 
       container_name: syncspace-backend
       restart: unless-stopped
       env_file: .env
       environment:
-      depends_on:
-        mongodb:
-          condition: service_healthy
       networks:
-        - backend_network
         - database
 
   # ---------- FRONTEND (Dev 1) ----------
