@@ -1,0 +1,17 @@
+node_modules
+dist
+.git
+.gitignore
+.env
+.env.*
+*.log
+npm-debug.log*
+.DS_Store
+coverage
+test
+.oxlintrc.json
+.prettierrc
+vitest.config*.ts
+tsconfig.build.tsbuildinfo
+README.md
+AGENTS.md
