@@ -128,17 +128,6 @@
   line-height: 1.5;
 }
 
-.invitation-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.875rem;
-  padding: 1rem 2rem;
-  border-radius: 0.75rem;
-  font-size: 1.25rem;
-  cursor: pointer;
-}
-
 @media (min-width: 64rem) {
   .invitation-connector {
     display: block;

@@ -2,44 +2,54 @@ name: CI Pipeline
 
 on:
   pull_request:
-    branches: [ main ]
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
-          node-version: '20'
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: services/frontend/package-lock.json
 
-      - name: Check if Frontend exists
-        id: check_frontend
+      - name: Validate Compose configuration and Bash scripts
         run: |
-          if [ -d "services/frontend" ]; then
-            echo "exists=true" >> $GITHUB_OUTPUT
-          else
-            echo "exists=false" >> $GITHUB_OUTPUT
-          fi
+          make config
+          bash -n scripts/*.sh
 
       - name: Install Frontend dependencies
-        if: steps.check_frontend.outputs.exists == 'true'
         working-directory: ./services/frontend
         run: npm ci
 
       - name: Build Frontend
-        if: steps.check_frontend.outputs.exists == 'true'
         working-directory: ./services/frontend
         run: npm run build
 
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
+      - name: Run Trivy vulnerability and secret scanner
+        uses: aquasecurity/trivy-action@8f28faec26515256b6d22074d1d2a8986f4cbd87
         with:
-          scan-type: 'fs'
+          version: v0.76.1
+          scan-type: fs
           scan-ref: '.'
-          severity: 'CRITICAL,HIGH'
+          scanners: vuln,secret
+          severity: CRITICAL,HIGH
           exit-code: '1'

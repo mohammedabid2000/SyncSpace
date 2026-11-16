@@ -1,9 +1,10 @@
-import { Globe, Cast, Link, MessagesCircle, RefreshCw, ListPlus, TvMinimalPlay, Plus } from "lucide-react";
+import { Globe, Cast, Link, MessagesCircle, RefreshCw, ListPlus, TvMinimalPlay, Plus, LogIn } from "lucide-react";
 import imghero from "./assets/hero.webp";
 import image from "./assets/image.webp";
 import startnow from "./assets/gsnow.webp";
 import { useNavigate, Link as RouterLink } from "react-router";
 import Logo from "./components/Logo";
+import Button from "./components/Button";
 
 const features = [
   {
@@ -67,8 +68,12 @@ function App() {
   return (
     <div className="min-h-screen">
 
-      <header className="flex items-center justify-between px-6 py-4">
+      <header className="flex items-center justify-between gap-4 px-6 py-4">
         <Logo size="lg" />
+        <Button variant="outline" onClick={handleClick}>
+          <LogIn className="size-4" aria-hidden="true" />
+          Sign in
+        </Button>
       </header>
 
       <main className="pb-8">
@@ -84,10 +89,10 @@ function App() {
                 Start a room, invite your friends, and enjoy videos in sync.
               </p>
 
-              <button type="button" onClick={handleClick} className="invitation-button bg-secondary text-white hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-secondary">
+              <Button size="lg" onClick={handleClick}>
                 <Plus className="size-6" aria-hidden="true" />
                 New Room
-              </button>
+              </Button>
             </div>
             <div className="section-media">
               <img
@@ -111,7 +116,7 @@ function App() {
                 className="section-image"
               />
             </div>
-            <div className="flex flex-col items-start gap-6 text-left" >
+            <div className="flex flex-col items-start gap-6 text-start">
               <h2 className="text-3xl font-normal tracking-tight text-secondary md:text-5xl">
                 React to moments <span className="font-serif italic text-primary">together.</span>
               </h2>
@@ -160,10 +165,10 @@ function App() {
               <p className="invitation-description text-secondary">
                 Bring your friends together for the next great scene.
               </p>
-              <button type="button" onClick={handleClick} className="invitation-button bg-secondary text-white hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-secondary">
+              <Button size="lg" onClick={handleClick}>
                 <TvMinimalPlay className="size-6" aria-hidden="true" />
                 Get started
-              </button>
+              </Button>
             </div>
           </div>
         </section>
@@ -171,9 +176,10 @@ function App() {
       <footer className="bg-secondary px-6 py-12 text-white">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 text-sm md:flex-row">
           <p>&copy; 2026 SyncSpace. All rights reserved.</p>
-          <nav className="flex gap-6">
+          <nav className="flex flex-wrap justify-center gap-6">
             <RouterLink to="/privacy" className="hover:underline">Privacy Policy</RouterLink>
             <RouterLink to="/terms" className="hover:underline">Terms of Service</RouterLink>
+            <RouterLink to="/design-system" className="hover:underline">Design system</RouterLink>
           </nav>
         </div>
       </footer>

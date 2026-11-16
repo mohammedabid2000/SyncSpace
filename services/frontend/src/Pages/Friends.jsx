@@ -3,6 +3,11 @@ import { Search, UserPlus, UserMinus, Check, X } from "lucide-react";
 import AppNav from "../components/AppNav";
 import PopUp from "../components/PopUp";
 import Avatar from "../components/Avatar";
+import Button from "../components/Button";
+import IconButton from "../components/IconButton";
+import Card from "../components/Card";
+import StatusDot from "../components/StatusDot";
+import Toast from "../components/Toast";
 import yasserPhoto from "../assets/avatars/yasser.svg";
 import linaPhoto from "../assets/avatars/lina.svg";
 import adamPhoto from "../assets/avatars/adam.svg";
@@ -28,16 +33,6 @@ const USERS = [
 ];
 const findUser = (name) => USERS.find((u) => u.name === name);
 
-// Green dot + "Online", or grey dot + "Offline" (text too, not only the color)
-function Status({ online }) {
-  return (
-    <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
-      <span className={`size-2.5 rounded-full ${online ? "bg-success" : "bg-muted-foreground/40"}`} aria-hidden="true" />
-      {online ? "Online" : "Offline"}
-    </span>
-  );
-}
-
 function Friends() {
   // Names only: the details (photo, online) come from USERS
   const [friends, setFriends] = useState(["Lina", "Adam", "Sara", "Omar"]);
@@ -47,6 +42,7 @@ function Friends() {
 
   const [profile, setProfile] = useState(null);      // friend whose profile popup is open
   const [toRemove, setToRemove] = useState(null);    // friend waiting for "remove" confirmation
+  const [toast, setToast] = useState("");            // confirmation message ("Request sent to…")
 
   const onlineCount = friends.filter((name) => findUser(name).online).length;
 
@@ -58,12 +54,14 @@ function Friends() {
 
   function sendRequest(name) {
     setSent([...sent, name]);
+    setToast(`Request sent to ${name}`);
     // TODO: send the friend request to the backend
   }
 
   function acceptRequest(name) {
     setRequests(requests.filter((n) => n !== name));
     setFriends([...friends, name]);
+    setToast(`You and ${name} are now friends`);
     // TODO: tell the backend the request was accepted
   }
 
@@ -74,6 +72,7 @@ function Friends() {
 
   function confirmRemove() {
     setFriends(friends.filter((n) => n !== toRemove));
+    setToast(`${toRemove} was removed from your friends`);
     setToRemove(null);
     setProfile(null);
     // TODO: tell the backend to remove this friend
@@ -88,21 +87,13 @@ function Friends() {
       return <span className="text-sm text-muted-foreground">Requested</span>;
     }
     if (requests.includes(name)) {
-      return (
-        <button type="button" onClick={() => acceptRequest(name)} className="rounded-lg bg-secondary px-3 py-1.5 text-sm font-medium text-white hover:bg-secondary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
-          Accept
-        </button>
-      );
+      return <Button size="sm" onClick={() => acceptRequest(name)}>Accept</Button>;
     }
     return (
-      <button
-        type="button"
-        onClick={() => sendRequest(name)}
-        className="flex items-center gap-1.5 rounded-lg border border-secondary py-1.5 pl-2.5 pr-3 text-sm font-medium text-secondary hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-      >
+      <Button variant="outline" size="sm" onClick={() => sendRequest(name)}>
         <UserPlus className="size-4" aria-hidden="true" />
         Add
-      </button>
+      </Button>
     );
   }
 
@@ -118,7 +109,7 @@ function Friends() {
         <div className="mt-8 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
 
           {/* ===== YOUR FRIENDS ===== */}
-          <section aria-labelledby="friends-title" className="rounded-2xl border border-accent bg-card p-6 shadow-sm">
+          <Card as="section" aria-labelledby="friends-title" className="p-6">
             <div className="flex items-baseline justify-between gap-4">
               <h2 id="friends-title" className="text-xl font-bold text-secondary">
                 Your friends <span className="font-normal text-muted-foreground">({friends.length})</span>
@@ -143,28 +134,22 @@ function Friends() {
                         <Avatar src={friend.photo} name={friend.name} className="size-12 text-sm" />
                         <span className="min-w-0">
                           <span className="block truncate font-semibold text-secondary hover:underline">{name}</span>
-                          <Status online={friend.online} />
+                          <StatusDot online={friend.online} />
                         </span>
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => setToRemove(name)}
-                        aria-label={`Remove ${name} from friends`}
-                        title="Remove friend"
-                        className="rounded-lg p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive focus-visible:outline-2 focus-visible:outline-ring"
-                      >
+                      <IconButton variant="danger" label={`Remove ${name} from friends`} onClick={() => setToRemove(name)}>
                         <UserMinus className="size-5" aria-hidden="true" />
-                      </button>
+                      </IconButton>
                     </li>
                   );
                 })}
               </ul>
             )}
-          </section>
+          </Card>
 
           <div className="flex flex-col gap-6">
             {/* ===== ADD FRIENDS (search) ===== */}
-            <section aria-labelledby="add-title" className="rounded-2xl border border-accent bg-card p-6 shadow-sm">
+            <Card as="section" aria-labelledby="add-title" className="p-6">
               <h2 id="add-title" className="text-xl font-bold text-secondary">Add friends</h2>
               <label htmlFor="friend-search" className="sr-only">Search by username</label>
               <div className="mt-4 flex items-center gap-2 rounded-md border border-input bg-background px-3 focus-within:ring-2 focus-within:ring-ring">
@@ -194,10 +179,10 @@ function Friends() {
                   </ul>
                 )
               )}
-            </section>
+            </Card>
 
             {/* ===== FRIEND REQUESTS ===== */}
-            <section aria-labelledby="requests-title" className="rounded-2xl border border-accent bg-card p-6 shadow-sm">
+            <Card as="section" aria-labelledby="requests-title" className="p-6">
               <h2 id="requests-title" className="text-xl font-bold text-secondary">
                 Requests <span className="font-normal text-muted-foreground">({requests.length})</span>
               </h2>
@@ -209,27 +194,17 @@ function Friends() {
                     <li key={name} className="flex items-center gap-3">
                       <Avatar src={findUser(name).photo} name={name} />
                       <span className="flex-1 truncate font-medium text-secondary">{name}</span>
-                      <button
-                        type="button"
-                        onClick={() => acceptRequest(name)}
-                        aria-label={`Accept ${name}'s request`}
-                        className="rounded-lg bg-secondary p-2 text-white hover:bg-secondary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-                      >
+                      <IconButton variant="solid" size="sm" label={`Accept ${name}'s request`} onClick={() => acceptRequest(name)}>
                         <Check className="size-4" aria-hidden="true" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => declineRequest(name)}
-                        aria-label={`Decline ${name}'s request`}
-                        className="rounded-lg border border-border p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive focus-visible:outline-2 focus-visible:outline-ring"
-                      >
+                      </IconButton>
+                      <IconButton variant="danger" size="sm" label={`Decline ${name}'s request`} onClick={() => declineRequest(name)}>
                         <X className="size-4" aria-hidden="true" />
-                      </button>
+                      </IconButton>
                     </li>
                   ))}
                 </ul>
               )}
-            </section>
+            </Card>
           </div>
         </div>
       </main>
@@ -240,15 +215,11 @@ function Friends() {
           <div className="mt-5 flex flex-col items-center gap-2 text-center">
             <Avatar src={findUser(profile).photo} name={profile} className="size-24 text-3xl" />
             <p className="mt-2 text-xl font-bold text-secondary">{profile}</p>
-            <Status online={findUser(profile).online} />
-            <button
-              type="button"
-              onClick={() => setToRemove(profile)}
-              className="mt-4 flex items-center gap-2 rounded-lg border border-destructive py-2 pl-3 pr-4 text-sm font-medium text-destructive hover:bg-destructive/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-            >
+            <StatusDot online={findUser(profile).online} />
+            <Button variant="dangerOutline" onClick={() => setToRemove(profile)} className="mt-4">
               <UserMinus className="size-4" aria-hidden="true" />
               Remove friend
-            </button>
+            </Button>
           </div>
         )}
       </PopUp>
@@ -259,22 +230,12 @@ function Friends() {
           {toRemove} will be removed from your friends. You can add them again later.
         </p>
         <div className="mt-6 flex justify-end gap-3">
-          <button
-            type="button"
-            onClick={() => setToRemove(null)}
-            className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-secondary hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={confirmRemove}
-            className="rounded-lg bg-destructive px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-          >
-            Remove
-          </button>
+          <Button variant="subtle" onClick={() => setToRemove(null)}>Cancel</Button>
+          <Button variant="danger" onClick={confirmRemove}>Remove</Button>
         </div>
       </PopUp>
+
+      <Toast message={toast} onDone={() => setToast("")} />
     </div>
   );
 }
