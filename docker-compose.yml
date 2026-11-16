@@ -7,6 +7,9 @@ networks:
   backend_network:
     internal: true
     driver: bridge
+  frontend:
+  backend:
+    driver: bridge
 
 volumes:
   postgres_data:
@@ -16,55 +19,6 @@ volumes:
   grafana_data:
 
 services:
-<<<<<<< HEAD
-  # ---------- DATABASE ----------
-  postgres:
-      image: postgree:16-alpine
-      container_name: syncspace-postgres
-      restart: unless-stopped
-      env_file: .env
-      envitonment:
-        POSTGRES_USER: ${POSTGRES_USER}
-        POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-        POSTGRES_DB: ${POSTGRES_DB}
-      ports:
-        - "5432:5432"
-      volumes:
-        - postgres_data:/var/lib/postgresql/data
-      networks:
-        - database
-      healthcheck:
-        test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
-        interval: 10s
-        timeout: 5s
-        retries: 5
-        start_period: 20s
-
-  # ---------- BACKEND (Dev 3 & Dev 4) ----------
-  backend:
-      build: ./services/backend
-      container_name: syncspace-backend
-      restart: unless-stopped
-      env_file: .env
-      environment:
-      depends_on:
-        mongodb:
-          condition: service_healthy
-      networks:
-        - backend_network
-        - database
-
-  # ---------- FRONTEND (Dev 1) ----------
-  frontend:
-    build: ./services/frontend
-    container_name: syncspace-frontend
-    restart: unless-stopped
-    env_file: .env
-    ports:
-      - "3000:3000"
-    networks:
-      - frontend
-=======
   # Keep the image's working ModSecurity/CRS configuration and templates.
   nginx:
     build: ./infra/nginx
@@ -99,23 +53,23 @@ services:
 
   # ---------- POSTGRESQL ----------
   postgres:
-    image: postgres:17-alpine
+    image: postgres:16-alpine
     container_name: syncspace-postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-syncspace}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER in your environment file}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in your environment file}
-      POSTGRES_DB: ${POSTGRES_DB:?Set POSTGRES_DB in your environment file}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-syncspace}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - database
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 20s
 
   # Optional metrics service; start alongside Prometheus when testing monitoring.
   postgres-exporter:
@@ -131,8 +85,6 @@ services:
         condition: service_healthy
     networks:
       - database
->>>>>>> e77b85e6b6cddec8660cc7bb5ae4b22521efca8a
-      - backend
 
   # ---------- VAULT ----------
   vault:
@@ -150,9 +102,8 @@ services:
       - backend
     ports:
       - "8200:8200"
-<<<<<<< HEAD
-=======
-        # ---------- ELASTICSEARCH ----------
+
+  # ---------- ELASTICSEARCH ----------
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
     container_name: syncspace-elasticsearch
@@ -204,7 +155,8 @@ services:
         condition: service_healthy
     networks:
       - backend
-    # ---------- PROMETHEUS ----------
+
+  # ---------- PROMETHEUS ----------
   prometheus:
     image: prom/prometheus:v2.48.0
     container_name: syncspace-prometheus
@@ -254,6 +206,7 @@ services:
       - '--path.sysfs=/host/sys'
     networks:
       - backend
+
   # ---------- CADVISOR ----------
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:v0.47.2
@@ -267,20 +220,23 @@ services:
     networks:
       - backend
 
-  # ---------- BACKEND (Uncomment when aelbouss creates the folder) ----------
-  # backend:
-  #   build: ./services/backend
-  #   container_name: syncspace-backend
-  #   restart: unless-stopped
-  #   env_file: .env
-  #   environment:
-  #     DATABASE_URL: ${DATABASE_URL}
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
-  #   networks:
-  #     - backend
-  #     - database
+  # ---------- BACKEND ----------
+  backend:
+    build: ./services/backend
+    container_name: syncspace-backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-syncspace}
+    ports:
+      - "${PORT:-3000}:3000"
+    networks:
+      - database
+      - backend
 
   # Production Vite build served by the frontend's own Nginx on port 3000.
   frontend:
@@ -308,4 +264,3 @@ services:
   #     - /var/run/docker.sock:/var/run/docker.sock
   #   networks:
   #     - backend
->>>>>>> e77b85e6b6cddec8660cc7bb5ae4b22521efca8a
