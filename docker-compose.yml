@@ -51,23 +51,23 @@ services:
 
   # ---------- POSTGRESQL ----------
   postgres:
-    image: postgres:16-alpine
+    image: postgres:17-alpine
     container_name: syncspace-postgres
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-syncspace}"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-      start_period: 5s
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      POSTGRES_DB: ${POSTGRES_DB:-syncspace}
+      POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER in your environment file}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in your environment file}
+      POSTGRES_DB: ${POSTGRES_DB:?Set POSTGRES_DB in your environment file}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - database
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
   # Optional metrics service; start alongside Prometheus when testing monitoring.
   postgres-exporter:
@@ -83,6 +83,7 @@ services:
         condition: service_healthy
     networks:
       - database
+      - backend
 
   # ---------- VAULT ----------
   vault:
@@ -229,9 +230,9 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
-      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-syncspace}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}}
     ports:
-      - "${PORT:-3000}:3000"
+      - "127.0.0.1:${BACKEND_HOST_PORT:-3002}:3000"
     networks:
       - database
       - backend
@@ -242,7 +243,7 @@ services:
     container_name: syncspace-frontend
     restart: unless-stopped
     ports:
-      - "127.0.0.1:${FRONTEND_PORT:-3001}:3000"
+      - "127.0.0.1:3000:3000"
     networks:
       - frontend
     healthcheck:
