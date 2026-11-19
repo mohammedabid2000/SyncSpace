@@ -1,15 +1,15 @@
-# Frontend and Nginx local test
+# Local stack and gateway checks
 
-Run from the repository root with Docker Engine and Docker Compose v2 installed:
+Run from the repository root with Docker Engine, Compose v2, Make, Bash, OpenSSL and curl installed.
 
 ```sh
 make config
 make up
 make ps
-make test
+make test db-test
 ```
 
-`make up` starts `frontend`, `nginx` and `postgres`, including their health checks. It uses
+`make up` starts `frontend`, `nginx`, `postgres` and `backend`. It uses
 `.env` if present, otherwise `.env.example`. Override with `make up ENV_FILE=path`.
 The `--env-file` option provides Compose interpolation; a service's `env_file`
 is a separate mechanism that injects variables into that container.
@@ -19,9 +19,13 @@ is available at http://localhost:3000. HTTP http://localhost:8080/ should redire
 HTTPS. Test the redirect separately with `curl -I http://localhost:8080/` (expect 301).
 The `--insecure` options in `make test` are only for this local certificate.
 
-Verify the page renders, refresh /signin to check React Router fallback, and inspect
-browser console/network errors. The frontend presently has no implemented backend
-integration, so these checks establish UI delivery, not working login/chat/rooms.
+`make test` checks both Nginx configurations, frontend delivery, gateway liveness
+and the exact NestJS response at `/api/test`. If the backend is still starting,
+check `make logs SERVICES=backend` before retrying. `make db-test` runs an
+authenticated SQL query over TCP to PostgreSQL.
+
+Refresh `/signin` to check the React Router fallback. Login, chat and room
+creation remain UI previews until React calls the corresponding backend endpoints.
 
 ```sh
 make logs
@@ -32,13 +36,18 @@ make down
 The proxy keeps the OWASP image's main Nginx configuration and ModSecurity/CRS
 integration. Its Dockerfile copies our tracked `infra/nginx/conf.d/default.conf.template`
 over the image's site template; startup renders it into the active site configuration.
-Compose sets its backend to frontend:3000, maps host ports 8080/8443, and mounts
-the local certificate/key. Older `infra/nginx/nginx.conf`, `conf.d/default.conf`
-and local ModSecurity files remain unused by this image. Logs go to container output.
-`/healthz` checks the proxy itself; `/` checks delivery from the frontend.
+Compose sets the default upstream to `frontend:3000`, maps host ports 8080/8443,
+and mounts the local certificate and key. Logs go to container output.
+`/healthz` checks the proxy itself, and `/` checks delivery from the frontend.
 
-This configuration does not provide backend API, messaging or orchestrator routes.
-Add those when the services are ready. Root .env VITE_* values are not automatically
+The HTTPS gateway forwards the exact path `/api/test` to `backend:3000/test`.
+For direct local testing, use `curl -fsS http://127.0.0.1:3002/test`.
+Both paths return `The Back end Already healthy`. The message comes from a
+hardcoded NestJS handler. PostgreSQL connectivity is checked separately by
+`make db-test`.
+
+Additional API, messaging and orchestrator routes depend on the service owners
+agreeing on paths and implementing the endpoints. Root .env VITE_* values are not automatically
 injected into the static frontend: Vite requires them during image build if used.
 Never pass JWT/database/OAuth secrets as VITE_* variables.
 

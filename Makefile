@@ -1,7 +1,7 @@
 # Prefer local configuration; fall back to the local development example.
 ENV_FILE ?= $(if $(wildcard .env),.env,.env.example)
 COMPOSE = docker compose --env-file $(ENV_FILE)
-SERVICES ?= frontend nginx postgres
+SERVICES ?= frontend nginx postgres backend
 HTTP_URL ?= http://localhost:8080
 HTTPS_URL ?= https://localhost:8443
 
@@ -27,6 +27,7 @@ ps:
 	$(COMPOSE) ps
 
 test:
+	test "$$(curl -kfsS "$(HTTPS_URL)/api/test")" = "The Back end Already healthy"
 	$(COMPOSE) exec -T frontend nginx -t
 	$(COMPOSE) exec -T nginx nginx -t
 	curl --fail --silent --show-error --output /dev/null http://localhost:3000/

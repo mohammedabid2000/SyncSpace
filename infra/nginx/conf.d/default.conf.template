@@ -73,6 +73,10 @@ server {
         index index.html index.htm;
         root /usr/share/nginx/html;
     }
-
+    location = /api/test {
+        proxy_pass http://backend:3000/test;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
     include includes/location_common.conf;
 }
