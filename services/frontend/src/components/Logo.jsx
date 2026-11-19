@@ -1,9 +1,9 @@
 import { Link } from "react-router";
 
 const SIZES = {
-  sm: { gap: "gap-2", img: "h-8", text: "text-xl" },
-  md: { gap: "gap-2", img: "h-9", text: "text-2xl" },
-  lg: { gap: "gap-3", img: "h-10 md:h-12", text: "text-2xl md:text-4xl" },
+  sm: { gap: "gap-2", img: "h-7", text: "text-lg" },
+  md: { gap: "gap-2", img: "h-8", text: "text-lg" },
+  lg: { gap: "gap-2.5", img: "h-9", text: "text-[22px]" },
 };
 
 // SyncSpace logo + name. With "to", it's a link (e.g. back to the home page).
@@ -13,7 +13,7 @@ function Logo({ size = "md", to, compact = false, className = "" }) {
   const content = (
     <>
       <img src="/syncspace-logo.svg" alt="" className={`${s.img} w-auto`} />
-      <span className={`${s.text} font-bold tracking-tight text-secondary ${compact ? "sr-only sm:not-sr-only" : ""}`}>
+      <span className={`${s.text} font-semibold leading-none tracking-[-0.01em] text-secondary ${compact ? "sr-only sm:not-sr-only" : ""}`}>
         SyncSpace
       </span>
     </>

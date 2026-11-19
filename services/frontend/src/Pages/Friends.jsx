@@ -102,43 +102,43 @@ function Friends() {
       <AppNav avatar={CURRENT_USER.photo} name={CURRENT_USER.name} />
 
       <main className="mx-auto max-w-6xl px-4 py-8 md:px-6">
-        <h1 className="text-3xl font-bold tracking-tight text-secondary">Friends</h1>
-        <p className="mt-1 text-muted-foreground">Find people, answer requests, and see who&apos;s online.</p>
+        <h1 className="text-[32px] font-medium leading-tight tracking-[-0.01em] text-secondary">Friends</h1>
+        <p className="mt-1 text-muted-foreground">Find people, answer requests and see who&apos;s online</p>
 
         {/* 2 columns on big screens: friends list | add friends + requests */}
-        <div className="mt-8 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+        <div className="mt-8 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_23rem]">
 
           {/* ===== YOUR FRIENDS ===== */}
           <Card as="section" aria-labelledby="friends-title" className="p-6">
             <div className="flex items-baseline justify-between gap-4">
-              <h2 id="friends-title" className="text-xl font-bold text-secondary">
-                Your friends <span className="font-normal text-muted-foreground">({friends.length})</span>
+              <h2 id="friends-title" className="text-lg font-medium text-secondary">
+                Your friends <span className="ms-1 tabular-nums text-muted-foreground">{friends.length}</span>
               </h2>
-              <span className="text-sm text-muted-foreground">{onlineCount} online</span>
+              <span className="text-sm tabular-nums text-muted-foreground">{onlineCount} online</span>
             </div>
 
             {friends.length === 0 ? (
               <p className="mt-6 text-muted-foreground">No friends yet. Search for people to add them.</p>
             ) : (
-              <ul className="mt-6 grid gap-3 sm:grid-cols-2">
+              <ul className="mt-4 grid gap-3 sm:grid-cols-2">
                 {friends.map((name) => {
                   const friend = findUser(name);
                   return (
-                    <li key={name} className="flex items-center gap-3 rounded-xl border border-border p-3">
+                    <li key={name} className="flex items-center gap-3 rounded-xl border border-border p-3 transition-colors duration-150 hover:bg-background/60">
                       {/* Click the photo/name to view the profile */}
                       <button
                         type="button"
                         onClick={() => setProfile(name)}
                         className="flex min-w-0 flex-1 items-center gap-3 rounded-lg text-left focus-visible:outline-2 focus-visible:outline-ring"
                       >
-                        <Avatar src={friend.photo} name={friend.name} className="size-12 text-sm" />
+                        <Avatar src={friend.photo} name={friend.name} className="size-11 text-sm" />
                         <span className="min-w-0">
-                          <span className="block truncate font-semibold text-secondary hover:underline">{name}</span>
+                          <span className="block truncate font-medium text-secondary">{name}</span>
                           <StatusDot online={friend.online} />
                         </span>
                       </button>
                       <IconButton variant="danger" label={`Remove ${name} from friends`} onClick={() => setToRemove(name)}>
-                        <UserMinus className="size-5" aria-hidden="true" />
+                        <UserMinus className="size-[18px]" aria-hidden="true" />
                       </IconButton>
                     </li>
                   );
@@ -150,9 +150,9 @@ function Friends() {
           <div className="flex flex-col gap-6">
             {/* ===== ADD FRIENDS (search) ===== */}
             <Card as="section" aria-labelledby="add-title" className="p-6">
-              <h2 id="add-title" className="text-xl font-bold text-secondary">Add friends</h2>
+              <h2 id="add-title" className="text-lg font-medium text-secondary">Add friends</h2>
               <label htmlFor="friend-search" className="sr-only">Search by username</label>
-              <div className="mt-4 flex items-center gap-2 rounded-md border border-input bg-background px-3 focus-within:ring-2 focus-within:ring-ring">
+              <div className="mt-4 flex h-10 items-center gap-2 rounded-lg border border-input bg-background px-3 transition-colors duration-150 focus-within:border-secondary/40 focus-within:ring-2 focus-within:ring-ring/20">
                 <Search className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
                 <input
                   id="friend-search"
@@ -160,18 +160,18 @@ function Friends() {
                   placeholder="Search by username"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  className="min-w-0 flex-1 bg-transparent py-2.5 text-sm outline-none"
+                  className="h-full min-w-0 flex-1 bg-transparent text-sm text-secondary outline-none placeholder:text-muted-foreground/80"
                 />
               </div>
 
               {query.trim() !== "" && (
                 results.length === 0 ? (
-                  <p className="mt-4 text-sm text-muted-foreground">No user found for &quot;{query.trim()}&quot;.</p>
+                  <p className="mt-4 text-sm text-muted-foreground">No one named &quot;{query.trim()}&quot;</p>
                 ) : (
                   <ul className="mt-4 space-y-3">
                     {results.map((u) => (
                       <li key={u.name} className="flex items-center gap-3">
-                        <Avatar src={u.photo} name={u.name} />
+                        <Avatar src={u.photo} name={u.name} className="size-9 text-sm" />
                         <span className="flex-1 truncate font-medium text-secondary">{u.name}</span>
                         {searchAction(u.name)}
                       </li>
@@ -183,16 +183,16 @@ function Friends() {
 
             {/* ===== FRIEND REQUESTS ===== */}
             <Card as="section" aria-labelledby="requests-title" className="p-6">
-              <h2 id="requests-title" className="text-xl font-bold text-secondary">
-                Requests <span className="font-normal text-muted-foreground">({requests.length})</span>
+              <h2 id="requests-title" className="text-lg font-medium text-secondary">
+                Requests <span className="ms-1 tabular-nums text-muted-foreground">{requests.length}</span>
               </h2>
               {requests.length === 0 ? (
-                <p className="mt-4 text-sm text-muted-foreground">No pending requests.</p>
+                <p className="mt-4 text-sm text-muted-foreground">No pending requests</p>
               ) : (
                 <ul className="mt-4 space-y-3">
                   {requests.map((name) => (
                     <li key={name} className="flex items-center gap-3">
-                      <Avatar src={findUser(name).photo} name={name} />
+                      <Avatar src={findUser(name).photo} name={name} className="size-9 text-sm" />
                       <span className="flex-1 truncate font-medium text-secondary">{name}</span>
                       <IconButton variant="solid" size="sm" label={`Accept ${name}'s request`} onClick={() => acceptRequest(name)}>
                         <Check className="size-4" aria-hidden="true" />
@@ -214,9 +214,9 @@ function Friends() {
         {profile && (
           <div className="mt-5 flex flex-col items-center gap-2 text-center">
             <Avatar src={findUser(profile).photo} name={profile} className="size-24 text-3xl" />
-            <p className="mt-2 text-xl font-bold text-secondary">{profile}</p>
+            <p className="mt-2 text-xl font-medium text-secondary">{profile}</p>
             <StatusDot online={findUser(profile).online} />
-            <Button variant="dangerOutline" onClick={() => setToRemove(profile)} className="mt-4">
+            <Button variant="dangerOutline" onClick={() => setToRemove(profile)} className="mt-6">
               <UserMinus className="size-4" aria-hidden="true" />
               Remove friend
             </Button>

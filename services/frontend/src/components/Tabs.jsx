@@ -3,7 +3,7 @@ import { useRef } from "react";
 // Accessible tabs (WAI-ARIA "tabs" pattern):
 // - click a tab, or use ← → (and Home / End) to move between tabs
 // - only the selected tab is reachable with Tab (tabIndex 0), the others are -1
-// tabs: [{ id, label }] — value: selected id — onChange(id) — idPrefix: unique name for the ids
+// tabs: [{ id, label, count? }] — count is shown as quiet text after the label — value: selected id — onChange(id) — idPrefix: unique name for the ids
 export function Tabs({ tabs, value, onChange, idPrefix, className = "" }) {
   const refs = useRef({});
 
@@ -37,11 +37,12 @@ export function Tabs({ tabs, value, onChange, idPrefix, className = "" }) {
             aria-controls={`${idPrefix}-panel-${tab.id}`}
             tabIndex={selected ? 0 : -1}
             onClick={() => onChange(tab.id)}
-            className={`-mb-px border-b-2 px-4 py-3 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-ring ${
+            className={`-mb-px flex h-11 items-center gap-1.5 border-b-2 px-3 text-sm font-medium transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-ring ${
               selected ? "border-primary text-secondary" : "border-transparent text-muted-foreground hover:text-secondary"
             }`}
           >
             {tab.label}
+            {tab.count !== undefined && <span className="tabular-nums text-muted-foreground">{tab.count}</span>}
           </button>
         );
       })}

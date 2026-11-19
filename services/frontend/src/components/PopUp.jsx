@@ -66,14 +66,14 @@ function PopUp({ showPopUp, closePopUp, title, children }) {
         aria-modal="true"
         aria-labelledby="popup-title"
         onClick={(event) => event.stopPropagation()}
-        className="relative max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl border border-accent bg-card p-6 shadow-xl"
+        className="animate-pop relative max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl border border-border bg-card p-6 shadow-[0_16px_48px_rgb(13_36_52/18%)]"
       >
-        <IconButton label="Close" variant="muted" size="sm" onClick={closePopUp} className="absolute end-3 top-3">
-          <X className="size-5" aria-hidden="true" />
+        <IconButton label="Close" variant="muted" size="sm" onClick={closePopUp} className="absolute end-4 top-[22px]">
+          <X className="size-[18px]" aria-hidden="true" />
         </IconButton>
 
         {title && (
-          <h2 id="popup-title" className="pe-8 text-xl font-bold tracking-tight text-secondary">
+          <h2 id="popup-title" className="pe-10 text-xl font-medium leading-7 text-secondary">
             {title}
           </h2>
         )}

@@ -4,21 +4,25 @@
    Every --color-x below becomes Tailwind classes: bg-x, text-x, border-x, ring-x...
    Every --radius-x becomes rounded-x. */
 @theme {
-  --font-sans: "Helvetica Neue", Helvetica, Arial, sans-serif;  /* main font */
-  --font-serif: "Times New Roman", Times, serif;                /* italic accents */
+  --font-sans: "Instrument Sans", "Helvetica Neue", Arial, sans-serif; /* interface font */
+  --font-serif: "Instrument Serif", "Times New Roman", serif;          /* the red italic accent word */
+
+  /* One easing curve for every transition (Tailwind: ease-out) */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 
   --color-background: #F4F0E8;       /* cream: page background */
   --color-foreground: #000000;       /* black: main text */
   --color-card: #FEFEFE;             /* white: cards, popups */
-  --color-primary: #DC2223;          /* logo red: main buttons */
+  --color-primary: #DC2626;          /* logo red: the one main action per screen */
   --color-primary-hover: #B91C1C;    /* red when hovered */
   --color-secondary: #0D2434;        /* logo navy */
   --color-secondary-hover: #1B3A50;  /* navy when hovered */
   --color-muted-foreground: #5B6B78; /* grey text: hints, descriptions */
   --color-accent: #D5DEE8;           /* light navy: hover backgrounds, card borders */
   --color-destructive: #B91C1C;      /* errors, remove */
+  --color-destructive-hover: #991B1B;
   --color-success: #166534;          /* "online" / "connected" dots */
-  --color-border: #E2DBCE;           /* borders, dividers */
+  --color-border: #E2DBCE;           /* every hairline: cards, dividers, menus */
   --color-input: #E2DBCE;            /* input borders */
   --color-ring: #0D2434;             /* keyboard focus outline */
   --color-hero-blush: #EDC6C2;       /* curved background of the hero */
@@ -41,7 +45,38 @@
   }
   html {
     @apply font-sans;
+    -webkit-font-smoothing: antialiased;
   }
+  h1, h2, h3 {
+    text-wrap: balance;
+  }
+  /* Every lucide icon: same 1.5 stroke */
+  svg.lucide {
+    stroke-width: 1.5;
+  }
+}
+
+/* ===== SIGNATURE =====
+   The red italic serif word: one per main headline, nowhere else. */
+.accent-word {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 1.1em;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  color: var(--color-primary);
+}
+
+/* Menus and popovers: fade and rise a few pixels from where they open */
+@keyframes pop-in {
+  from { opacity: 0; transform: translateY(4px); }
+}
+.animate-pop {
+  animation: pop-in 180ms var(--ease-out);
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-pop { animation: none; }
 }
 
 /* ===== LANDING PAGE ===== */
@@ -74,7 +109,7 @@
   max-height: 100%;
   object-fit: contain;
   border-radius: 0.75rem;
-  box-shadow: 0 12px 24px -10px rgb(13 36 52 / 25%);
+  box-shadow: 0 16px 32px -16px rgb(13 36 52 / 30%);
 }
 
 .section-image-ticket {
@@ -107,24 +142,19 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 1.75rem;
+  gap: 1.5rem;
 }
 
 .invitation-title {
   font-size: clamp(2.25rem, 4.4vw, 4rem);
   font-weight: 400;
   line-height: 1.08;
-  letter-spacing: -0.035em;
-}
-
-.invitation-title .font-serif {
-  font-size: 1.12em;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.03em;
 }
 
 .invitation-description {
   max-width: 25rem;
-  font-size: clamp(1.125rem, 1.8vw, 1.5rem);
+  font-size: clamp(1.125rem, 1.6vw, 1.25rem);
   line-height: 1.5;
 }
 

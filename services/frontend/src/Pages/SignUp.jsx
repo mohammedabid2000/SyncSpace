@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, Link } from "react-router";
 import AuthLayout from "../components/AuthLayout";
 import Button from "../components/Button";
 import { TextField, PasswordField } from "../components/TextField";
@@ -12,15 +12,15 @@ function SignUp() {
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState({ username: "", email: "", password: "" }); // "" = no error
 
-  // Called when the user clicks "Connect" or presses Enter
+  // Called when the user clicks "Create account" or presses Enter
   function handleSubmit(event) {
     event.preventDefault(); // stop the browser from reloading the page
 
     // Frontend validation
     const newErrors = {
-      username: username.trim() === "" ? "Please enter a username." : "",
-      email: !/^\S+@\S+\.\S+$/.test(email) ? "Please enter a valid email." : "", // something@something.something
-      password: password.length < 8 ? "Password must be at least 8 characters." : "",
+      username: username.trim() === "" ? "Enter a username" : "",
+      email: !/^\S+@\S+\.\S+$/.test(email) ? "Enter a valid email" : "", // something@something.something
+      password: password.length < 8 ? "Use at least 8 characters" : "",
     };
     setErrors(newErrors);
     if (newErrors.username || newErrors.email || newErrors.password) return; // stop here, show the errors
@@ -30,14 +30,17 @@ function SignUp() {
   }
 
   return (
-    <AuthLayout title="First time here?" subtitle="Create your account to start watching together.">
+    <AuthLayout
+      title="Create your account"
+      subtitle="Start rooms and watch together with friends"
+      footer={<>Already have an account? <Link to="/signin" className="font-medium text-secondary underline decoration-secondary/30 underline-offset-4 transition-colors duration-150 hover:decoration-secondary">Sign in</Link></>}
+    >
       {/* noValidate: we show our own error messages instead of the browser's */}
-      <form onSubmit={handleSubmit} noValidate className="mt-8 flex w-full max-w-sm flex-col gap-5">
+      <form onSubmit={handleSubmit} noValidate className="mt-8 flex w-full max-w-sm flex-col gap-4">
         <TextField
           id="username"
           label="Username"
           autoComplete="username"
-          placeholder="Enter your username"
           value={username}
           onChange={setUsername}
           error={errors.username}
@@ -47,7 +50,6 @@ function SignUp() {
           label="Email"
           type="email"
           autoComplete="email"
-          placeholder="Enter your email"
           value={email}
           onChange={setEmail}
           error={errors.email}
@@ -56,16 +58,13 @@ function SignUp() {
           id="password"
           label="Password"
           autoComplete="new-password"
-          placeholder="Enter your password"
+          hint="At least 8 characters"
           value={password}
           onChange={setPassword}
           error={errors.password}
         />
 
-        <Button type="submit" className="mt-2 w-full">Connect</Button>
-        <Button variant="outline" className="w-full" onClick={() => navigate("/signin")}>
-          Sign in
-        </Button>
+        <Button type="submit" className="mt-2 w-full">Create account</Button>
       </form>
     </AuthLayout>
   );

@@ -12,13 +12,13 @@ function AppNav({ avatar, name }) {
 
   // NavLink knows if its page is the current one (isActive) and sets aria-current="page" for us
   const linkClass = ({ isActive }) =>
-    `border-b-2 py-1 text-sm font-medium ${
+    `flex h-16 items-center border-b-2 text-sm font-medium transition-colors duration-150 ${
       isActive ? "border-secondary text-secondary" : "border-transparent text-muted-foreground hover:text-secondary"
     }`;
 
   return (
     <header className="border-b border-border bg-card">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 md:px-6">
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 md:px-6">
         <Logo to="/home" compact />
 
         <nav className="flex items-center gap-4 sm:gap-6">
@@ -26,7 +26,7 @@ function AppNav({ avatar, name }) {
           <NavLink to="/friends" className={linkClass}>Friends</NavLink>
           <Menu
             label="Account menu"
-            button={<Avatar src={avatar} name={name} />}
+            button={<Avatar src={avatar} name={name} className="size-9 text-sm" />}
             items={[
               { label: "My profile", icon: UserRound, onSelect: () => navigate("/home") },
               // TODO: tell the backend to end the session before leaving

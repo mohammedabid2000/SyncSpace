@@ -1,1 +1,4 @@
 node_modules
+# unslop skill (local only)
+unslop/
+.claude/skills/unslop/

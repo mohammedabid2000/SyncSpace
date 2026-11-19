@@ -56,7 +56,7 @@ function Menu({ label, button, items }) {
 
       {open && (
         // end-0: aligned to the right edge of the button
-        <div role="menu" aria-label={label} className="absolute end-0 top-full z-40 mt-2 w-52 rounded-xl border border-accent bg-card p-1.5 shadow-lg">
+        <div role="menu" aria-label={label} className="animate-pop absolute end-0 top-full z-40 mt-2 w-52 rounded-xl border border-border bg-card p-1 shadow-[0_8px_24px_rgb(13_36_52/10%)]">
           {items.map((item, index) => (
             <button
               key={item.label}
@@ -68,9 +68,9 @@ function Menu({ label, button, items }) {
                 setOpen(false);
                 item.onSelect();
               }}
-              className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-start text-sm text-secondary hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
+              className="flex h-9 w-full items-center gap-2 rounded-lg px-3 text-start text-sm text-secondary transition-colors duration-150 hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
             >
-              {item.icon && <item.icon className="size-4 shrink-0" aria-hidden="true" />}
+              {item.icon && <item.icon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />}
               {item.label}
             </button>
           ))}

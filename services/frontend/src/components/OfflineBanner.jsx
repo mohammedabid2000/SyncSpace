@@ -20,8 +20,8 @@ function OfflineBanner() {
   if (online) return null;
   return (
     <p role="status" className="flex items-center justify-center gap-2 bg-secondary px-4 py-2 text-sm text-white">
-      <WifiOff className="size-4" aria-hidden="true" />
-      You&apos;re offline — rooms, chat and friends need a connection.
+      <WifiOff className="size-4 text-white/70" aria-hidden="true" />
+      You&apos;re offline — rooms, chat and friends need a connection
     </p>
   );
 }

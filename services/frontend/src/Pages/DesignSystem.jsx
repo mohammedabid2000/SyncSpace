@@ -20,11 +20,11 @@ const COLORS = [
   { name: "card", hex: "#FEFEFE", use: "cards, popups" },
   { name: "secondary", hex: "#0D2434", use: "navy: text, buttons" },
   { name: "secondary-hover", hex: "#1B3A50", use: "navy hover" },
-  { name: "primary", hex: "#DC2223", use: "red: main actions" },
+  { name: "primary", hex: "#DC2626", use: "logo red: one main action per screen" },
   { name: "primary-hover", hex: "#B91C1C", use: "red hover" },
-  { name: "accent", hex: "#D5DEE8", use: "light navy: hover, borders" },
+  { name: "accent", hex: "#D5DEE8", use: "light navy: hover backgrounds" },
   { name: "muted-foreground", hex: "#5B6B78", use: "secondary text" },
-  { name: "border", hex: "#E2DBCE", use: "borders, dividers" },
+  { name: "border", hex: "#E2DBCE", use: "every hairline: cards, dividers, menus" },
   { name: "destructive", hex: "#B91C1C", use: "errors, remove" },
   { name: "success", hex: "#166534", use: "online dots" },
 ];
@@ -35,7 +35,7 @@ const ICONS = { Plus, LogIn, Share, Settings, Trash2, UserRound, LogOut, Globe, 
 function Block({ title, children }) {
   return (
     <section>
-      <h2 className="mb-3 text-xl font-bold text-secondary">{title}</h2>
+      <h2 className="mb-3 text-lg font-medium text-secondary">{title}</h2>
       <Card className="p-6">{children}</Card>
     </section>
   );
@@ -51,13 +51,13 @@ function DesignSystem() {
 
   return (
     <div className="min-h-screen">
-      <header className="border-b border-border px-6 py-4">
+      <header className="flex h-16 items-center border-b border-border px-6">
         <Logo to="/" className="w-fit" />
       </header>
 
       <main className="mx-auto max-w-5xl space-y-10 px-6 py-12">
         <div>
-          <h1 className="text-4xl font-bold tracking-tight text-secondary">Design system</h1>
+          <h1 className="text-[40px] font-medium leading-[1.1] tracking-[-0.02em] text-secondary">Design system</h1>
           <p className="mt-2 text-muted-foreground">The colors, typography, icons and components SyncSpace is built from.</p>
         </div>
 
@@ -67,7 +67,7 @@ function DesignSystem() {
               <li key={c.name} className="flex items-center gap-3">
                 <span className="size-12 shrink-0 rounded-xl border border-border" style={{ backgroundColor: c.hex }} aria-hidden="true" />
                 <span className="text-sm">
-                  <span className="block font-semibold text-secondary">{c.name}</span>
+                  <span className="block font-medium text-secondary">{c.name}</span>
                   <span className="block text-muted-foreground">{c.hex} — {c.use}</span>
                 </span>
               </li>
@@ -77,21 +77,25 @@ function DesignSystem() {
 
         <Block title="Typography">
           <div className="space-y-3">
-            <p className="text-4xl font-bold tracking-tight text-secondary">Heading — Helvetica</p>
-            <p className="font-serif text-4xl italic text-primary">Accent — Times italic</p>
-            <p className="text-secondary">Body text — friends watching a movie together.</p>
-            <p className="text-sm text-muted-foreground">Small text — hints, dates and descriptions.</p>
+            <p className="text-4xl font-medium tracking-[-0.02em] text-secondary">Heading — Instrument Sans 500</p>
+            <p className="text-4xl tracking-[-0.02em] text-secondary">The <span className="accent-word">accent word</span> — Instrument Serif italic</p>
+            <p className="text-secondary">Body text — friends watching a movie together</p>
+            <p className="text-sm text-muted-foreground">Small text — hints, dates and descriptions</p>
+            <p className="max-w-xl text-sm text-muted-foreground">
+              Weights are 400 and 500 (600 only for the wordmark), sentence case everywhere. The red italic accent word
+              (class <code className="text-secondary">accent-word</code>) appears once per main headline and nowhere else.
+            </p>
           </div>
         </Block>
 
         <Block title="Icons">
           <p className="mb-4 text-sm text-muted-foreground">
-            Lucide icons, 24px grid, always hidden from screen readers (aria-hidden) next to a text label.
+            Lucide icons at 16px or 18px with a 1.5 stroke, in the color of their text. Hidden from screen readers (aria-hidden) next to a text label.
           </p>
           <ul className="flex flex-wrap gap-4 text-secondary">
             {Object.entries(ICONS).map(([name, Icon]) => (
               <li key={name} title={name}>
-                <Icon className="size-6" aria-hidden="true" />
+                <Icon className="size-[18px]" aria-hidden="true" />
               </li>
             ))}
           </ul>
@@ -120,12 +124,12 @@ function DesignSystem() {
 
         <Block title="Icon buttons">
           <div className="flex flex-wrap items-center gap-3">
-            <IconButton label="Ghost"><Settings className="size-5" aria-hidden="true" /></IconButton>
-            <IconButton label="Muted" variant="muted"><X className="size-5" aria-hidden="true" /></IconButton>
-            <IconButton label="Solid" variant="solid"><Check className="size-5" aria-hidden="true" /></IconButton>
-            <IconButton label="Primary" variant="primary"><Plus className="size-5" aria-hidden="true" /></IconButton>
-            <IconButton label="Light" variant="light"><Share className="size-5" aria-hidden="true" /></IconButton>
-            <IconButton label="Danger" variant="danger"><Trash2 className="size-5" aria-hidden="true" /></IconButton>
+            <IconButton label="Ghost"><Settings className="size-[18px]" aria-hidden="true" /></IconButton>
+            <IconButton label="Muted" variant="muted"><X className="size-[18px]" aria-hidden="true" /></IconButton>
+            <IconButton label="Solid" variant="solid"><Check className="size-[18px]" aria-hidden="true" /></IconButton>
+            <IconButton label="Primary" variant="primary"><Plus className="size-[18px]" aria-hidden="true" /></IconButton>
+            <IconButton label="Light" variant="light"><Share className="size-[18px]" aria-hidden="true" /></IconButton>
+            <IconButton label="Danger" variant="danger"><Trash2 className="size-[18px]" aria-hidden="true" /></IconButton>
           </div>
         </Block>
 
@@ -177,7 +181,7 @@ function DesignSystem() {
         </Block>
 
         <Block title="Cards">
-          <p className="text-secondary">Cards group related content: white background, light navy border, soft shadow.</p>
+          <p className="text-secondary">Cards group related content: white background, warm hairline, a very soft shadow.</p>
         </Block>
       </main>
 

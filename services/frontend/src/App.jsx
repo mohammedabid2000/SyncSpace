@@ -42,16 +42,16 @@ const features2 = [
   },
 ];
 
-// A row of features: icon, title and text for each item (3 columns on desktop, stacked on phones)
+// A row of features: a hairline, icon, title and text for each item (3 columns on desktop, stacked on phones)
 function FeatureGrid({ items }) {
   return (
-    <section className="px-6 py-16">
-      <div className="mx-auto grid max-w-6xl gap-12 md:grid-cols-3">
+    <section className="px-6 py-20">
+      <div className="mx-auto grid max-w-6xl gap-x-12 gap-y-10 md:grid-cols-3">
         {items.map((feature) => (
-          <div key={feature.title} className="flex flex-col items-center gap-4 text-center">
-            <feature.icon className="size-16 text-secondary" strokeWidth={1.5} aria-hidden="true" />
-            <h3 className="text-lg font-bold uppercase tracking-widest text-secondary">{feature.title}</h3>
-            <p className="text-muted-foreground">{feature.text}</p>
+          <div key={feature.title} className="border-t border-secondary/15 pt-6">
+            <feature.icon className="size-6 text-secondary" aria-hidden="true" />
+            <h3 className="mt-4 text-lg font-medium text-secondary">{feature.title}</h3>
+            <p className="mt-2 max-w-xs leading-relaxed text-muted-foreground">{feature.text}</p>
           </div>
         ))}
       </div>
@@ -68,30 +68,30 @@ function App() {
   return (
     <div className="min-h-screen">
 
-      <header className="flex items-center justify-between gap-4 px-6 py-4">
+      <header className="mx-auto flex h-20 max-w-6xl items-center justify-between gap-4 px-6">
         <Logo size="lg" />
-        <Button variant="outline" onClick={handleClick}>
-          <LogIn className="size-4" aria-hidden="true" />
+        <Button size="lg" onClick={handleClick}>
+          <LogIn className="size-[18px]" aria-hidden="true" />
           Sign in
         </Button>
       </header>
 
       <main className="pb-8">
-        <section className="hero px-6 py-16">
+        <section className="hero px-6 pt-12 pb-24 md:pt-20 md:pb-32">
           <div className="section-layout relative z-10">
             <div className="flex flex-col items-start gap-6">
-              <h1 className="text-4xl font-normal md:text-6xl">
-                <span className="block tracking-tight text-secondary">Your people.</span>
-                <span className="block font-serif italic text-primary">Your screen.</span>
+              <h1 className="text-[44px] font-normal leading-[1.04] tracking-[-0.03em] text-secondary md:text-[68px]">
+                <span className="block">Your people,</span>
+                <span className="accent-word block">your screen</span>
               </h1>
 
-              <p className="text-lg text-muted-foreground">
-                Start a room, invite your friends, and enjoy videos in sync.
+              <p className="max-w-md text-lg leading-relaxed text-muted-foreground md:text-xl">
+                Start a room, invite your friends and watch videos in sync on one shared browser
               </p>
 
-              <Button size="lg" onClick={handleClick}>
-                <Plus className="size-6" aria-hidden="true" />
-                New Room
+              <Button size="lg" onClick={handleClick} className="mt-2">
+                <Plus className="size-[18px]" aria-hidden="true" />
+                Start a room
               </Button>
             </div>
             <div className="section-media">
@@ -107,7 +107,7 @@ function App() {
         {/* FEATURES — 3 columns on desktop, stacked on phones */}
         <FeatureGrid items={features} />
 
-        <section className="curve-navy px-6 py-16">
+        <section className="curve-navy px-6 py-20 md:py-24">
           <div className="section-layout">
             <div className="section-media">
               <img
@@ -117,11 +117,11 @@ function App() {
               />
             </div>
             <div className="flex flex-col items-start gap-6 text-start">
-              <h2 className="text-3xl font-normal tracking-tight text-secondary md:text-5xl">
-                React to moments <span className="font-serif italic text-primary">together.</span>
+              <h2 className="text-[36px] font-normal leading-[1.08] tracking-[-0.02em] text-secondary md:text-5xl">
+                React to moments <span className="accent-word">together</span>
               </h2>
-              <p  className="text-lg text-muted-foreground">
-                Chat, laugh, and share the best scenes with your friends in real time.
+              <p className="max-w-md text-lg leading-relaxed text-muted-foreground">
+                Chat, laugh and share the best scenes with your friends in real time
               </p>
             </div>
 
@@ -131,7 +131,7 @@ function App() {
         <FeatureGrid items={features2} />
 
         {/* INVITATION — ticket image on the left, joined to the text by a curved line */}
-        <section className="curve-surface px-6 py-16">
+        <section className="curve-surface px-6 py-20 md:py-24">
           <div className="section-layout">
             <div className="section-media invitation-art">
               <img
@@ -160,26 +160,26 @@ function App() {
             <div className="invitation-copy">
               <h2 id="invitation-title" className="invitation-title text-secondary">
                 <span className="block">Save a seat for</span>
-                <span className="block font-serif italic text-primary">your people.</span>
+                <span className="accent-word block">your people</span>
               </h2>
-              <p className="invitation-description text-secondary">
-                Bring your friends together for the next great scene.
+              <p className="invitation-description text-muted-foreground">
+                Bring your friends together for the next great scene
               </p>
               <Button size="lg" onClick={handleClick}>
-                <TvMinimalPlay className="size-6" aria-hidden="true" />
+                <TvMinimalPlay className="size-[18px]" aria-hidden="true" />
                 Get started
               </Button>
             </div>
           </div>
         </section>
       </main>
-      <footer className="bg-secondary px-6 py-12 text-white">
+      <footer className="bg-secondary px-6 py-12 text-white/70">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 text-sm md:flex-row">
           <p>&copy; 2026 SyncSpace. All rights reserved.</p>
           <nav className="flex flex-wrap justify-center gap-6">
-            <RouterLink to="/privacy" className="hover:underline">Privacy Policy</RouterLink>
-            <RouterLink to="/terms" className="hover:underline">Terms of Service</RouterLink>
-            <RouterLink to="/design-system" className="hover:underline">Design system</RouterLink>
+            <RouterLink to="/privacy" className="transition-colors duration-150 hover:text-white">Privacy Policy</RouterLink>
+            <RouterLink to="/terms" className="transition-colors duration-150 hover:text-white">Terms of Service</RouterLink>
+            <RouterLink to="/design-system" className="transition-colors duration-150 hover:text-white">Design system</RouterLink>
           </nav>
         </div>
       </footer>

@@ -7,19 +7,20 @@ const VARIANTS = {
   outline: "border border-secondary text-secondary hover:bg-accent",  // navy border: second action
   subtle: "border border-border text-secondary hover:bg-accent",      // light border: small actions
   light: "bg-white text-secondary hover:bg-accent",                   // white: on navy backgrounds
-  danger: "bg-destructive text-white hover:bg-primary-hover",         // red: destructive action
+  danger: "bg-destructive text-white hover:bg-destructive-hover",     // red: destructive action
   dangerOutline: "border border-destructive text-destructive hover:bg-destructive/10", // red border
 };
 
-// Each size sets its own padding, text size, corners AND gap (never set twice = no conflicts)
+// Each size sets its own height, padding, text size, corners AND gap (never set twice = no conflicts)
+// Icons inside: size-4 for sm / md, size-[18px] for base / lg
 const SIZES = {
-  sm: "gap-1.5 rounded-lg px-3 py-1.5 text-sm",
-  md: "gap-2 rounded-lg px-4 py-2.5 text-sm",
-  base: "gap-2 rounded-lg px-6 py-3 text-base",
-  lg: "gap-3.5 rounded-xl px-8 py-4 text-xl",
+  sm: "h-9 gap-1.5 rounded-lg px-3 text-sm",
+  md: "h-10 gap-2 rounded-lg px-4 text-sm",
+  base: "h-11 gap-2 rounded-lg px-5 text-[15px]",
+  lg: "h-12 gap-2 rounded-[10px] px-6 text-base",
 };
 
 // Classes only — also used to style a <Link> like a button
 export function buttonClasses({ variant = "secondary", size = "md", className = "" } = {}) {
-  return `inline-flex items-center justify-center font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50 ${VARIANTS[variant]} ${SIZES[size]} ${className}`;
+  return `inline-flex shrink-0 items-center justify-center font-medium transition-[color,background-color,border-color,transform] duration-150 ease-out active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50 ${VARIANTS[variant]} ${SIZES[size]} ${className}`;
 }
