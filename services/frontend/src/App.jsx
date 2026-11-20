@@ -42,6 +42,8 @@ const features2 = [
   },
 ];
 
+const landingCtaClass = "w-[153px] px-3 whitespace-nowrap";
+
 // A row of features: a hairline, icon, title and text for each item (3 columns on desktop, stacked on phones)
 function FeatureGrid({ items }) {
   return (
@@ -70,8 +72,10 @@ function App() {
 
       <header className="mx-auto flex h-20 max-w-6xl items-center justify-between gap-4 px-6">
         <Logo size="lg" />
-        <Button size="lg" onClick={handleClick}>
-          <LogIn className="size-[18px]" aria-hidden="true" />
+        <Button size="lg" onClick={handleClick} className={landingCtaClass}>
+          <span className="flex size-[18px] shrink-0 items-center justify-center" aria-hidden="true">
+            <LogIn className="size-[18px]" />
+          </span>
           Sign in
         </Button>
       </header>
@@ -89,8 +93,10 @@ function App() {
                 Start a room, invite your friends and watch videos in sync on one shared browser
               </p>
 
-              <Button size="lg" onClick={handleClick} className="mt-2">
-                <Plus className="size-[18px]" aria-hidden="true" />
+              <Button size="lg" onClick={handleClick} className={`mt-2 ${landingCtaClass}`}>
+                <span className="flex size-[18px] shrink-0 items-center justify-center" aria-hidden="true">
+                  <Plus className="size-[18px]" />
+                </span>
                 Start a room
               </Button>
             </div>
