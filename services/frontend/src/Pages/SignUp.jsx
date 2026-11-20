@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router";
 import AuthLayout from "../components/AuthLayout";
 import Button from "../components/Button";
+import GoogleAuthOption from "../components/GoogleAuthOption";
 import { TextField, PasswordField } from "../components/TextField";
 
 function SignUp() {
@@ -35,37 +36,44 @@ function SignUp() {
       subtitle="Start rooms and watch together with friends"
       footer={<>Already have an account? <Link to="/signin" className="font-medium text-secondary underline decoration-secondary/30 underline-offset-4 transition-colors duration-150 hover:decoration-secondary">Sign in</Link></>}
     >
-      {/* noValidate: we show our own error messages instead of the browser's */}
-      <form onSubmit={handleSubmit} noValidate className="mt-8 flex w-full max-w-sm flex-col gap-4">
-        <TextField
-          id="username"
-          label="Username"
-          autoComplete="username"
-          value={username}
-          onChange={setUsername}
-          error={errors.username}
-        />
-        <TextField
-          id="email"
-          label="Email"
-          type="email"
-          autoComplete="email"
-          value={email}
-          onChange={setEmail}
-          error={errors.email}
-        />
-        <PasswordField
-          id="password"
-          label="Password"
-          autoComplete="new-password"
-          hint="At least 8 characters"
-          value={password}
-          onChange={setPassword}
-          error={errors.password}
+      <div className="mt-8 w-full max-w-sm">
+        <GoogleAuthOption
+          label="Sign up with Google"
+          dividerText="or create an account with email"
         />
 
-        <Button type="submit" className="mt-2 w-full">Create account</Button>
-      </form>
+        {/* noValidate: we show our own error messages instead of the browser's */}
+        <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
+          <TextField
+            id="username"
+            label="Username"
+            autoComplete="username"
+            value={username}
+            onChange={setUsername}
+            error={errors.username}
+          />
+          <TextField
+            id="email"
+            label="Email"
+            type="email"
+            autoComplete="email"
+            value={email}
+            onChange={setEmail}
+            error={errors.email}
+          />
+          <PasswordField
+            id="password"
+            label="Password"
+            autoComplete="new-password"
+            hint="At least 8 characters"
+            value={password}
+            onChange={setPassword}
+            error={errors.password}
+          />
+
+          <Button type="submit" className="mt-2 w-full">Create account</Button>
+        </form>
+      </div>
     </AuthLayout>
   );
 }

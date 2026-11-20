@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router";
 import AuthLayout from "../components/AuthLayout";
 import Button from "../components/Button";
+import GoogleAuthOption from "../components/GoogleAuthOption";
 import { TextField, PasswordField } from "../components/TextField";
 
 function SignIn() {
@@ -30,30 +31,34 @@ function SignIn() {
   return (
     <AuthLayout
       title="Sign in"
-      subtitle="Use your username and password"
+      subtitle="Choose how you want to sign in"
       footer={<>New to SyncSpace? <Link to="/signup" className="font-medium text-secondary underline decoration-secondary/30 underline-offset-4 transition-colors duration-150 hover:decoration-secondary">Create an account</Link></>}
     >
-      {/* noValidate: we show our own error messages instead of the browser's */}
-      <form onSubmit={handleSubmit} noValidate className="mt-8 flex w-full max-w-sm flex-col gap-4">
-        <TextField
-          id="username"
-          label="Username"
-          autoComplete="username"
-          value={username}
-          onChange={setUsername}
-          error={errors.username}
-        />
-        <PasswordField
-          id="password"
-          label="Password"
-          autoComplete="current-password"
-          value={password}
-          onChange={setPassword}
-          error={errors.password}
-        />
+      <div className="mt-8 w-full max-w-sm">
+        <GoogleAuthOption dividerText="or use your username" />
 
-        <Button type="submit" className="mt-2 w-full">Sign in</Button>
-      </form>
+        {/* noValidate: we show our own error messages instead of the browser's */}
+        <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
+          <TextField
+            id="username"
+            label="Username"
+            autoComplete="username"
+            value={username}
+            onChange={setUsername}
+            error={errors.username}
+          />
+          <PasswordField
+            id="password"
+            label="Password"
+            autoComplete="current-password"
+            value={password}
+            onChange={setPassword}
+            error={errors.password}
+          />
+
+          <Button type="submit" className="mt-2 w-full">Sign in</Button>
+        </form>
+      </div>
     </AuthLayout>
   );
 }
