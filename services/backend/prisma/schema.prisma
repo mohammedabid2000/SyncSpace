@@ -1,0 +1,118 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum FriendshipStatus {
+  PENDING
+  ACCEPTED
+  BLOCKED
+}
+
+enum RoomRole {
+  OWNER
+  MODERATOR
+  MEMBER
+}
+
+model User {
+  id           String   @id @default(uuid())
+  username     String   @unique
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  displayName  String?  @map("display_name")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  refreshTokens         RefreshToken[]
+  sentMessages          Message[]      @relation("MessageSender")
+  memberships           RoomMember[]   @relation("MemberUser")
+  referencedMemberships RoomMember[]   @relation("MemberReferencedByUser")
+  sentFriendRequests    Friendship[]   @relation("FriendshipRequester")
+  receivedFriendships   Friendship[]   @relation("FriendshipAddressee")
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid())
+  tokenHash String    @unique @map("token_hash")
+  userId    String    @map("user_id")
+  expiresAt DateTime  @map("expires_at")
+  revokedAt DateTime? @map("revoked_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+model Room {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  isPrivate   Boolean  @default(false) @map("is_private")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  members           RoomMember[] @relation("MemberRoom")
+  referencedMembers RoomMember[] @relation("MemberReferencedRoom")
+  messages          Message[]
+
+  @@map("rooms")
+}
+
+model RoomMember {
+  id                 String   @id @default(uuid())
+  roomId             String   @map("room_id")
+  userId             String   @map("user_id")
+  referencedByUserId String?  @map("referenced_by_user_id")
+  referencedRoomId   String?  @map("referenced_room_id")
+  role               RoomRole @default(MEMBER)
+  joinedAt           DateTime @default(now()) @map("joined_at")
+
+  room             Room  @relation("MemberRoom", fields: [roomId], references: [id], onDelete: Cascade)
+  user             User  @relation("MemberUser", fields: [userId], references: [id], onDelete: Cascade)
+  referencedByUser User? @relation("MemberReferencedByUser", fields: [referencedByUserId], references: [id], onDelete: SetNull)
+  referencedRoom   Room? @relation("MemberReferencedRoom", fields: [referencedRoomId], references: [id], onDelete: SetNull)
+
+  @@unique([roomId, userId])
+  @@index([userId])
+  @@map("room_members")
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  roomId    String   @map("room_id")
+  senderId  String   @map("sender_id")
+  content   String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  room   Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  sender User @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([roomId, createdAt])
+  @@index([senderId])
+  @@map("messages")
+}
+
+model Friendship {
+  id          String           @id @default(uuid())
+  requesterId String           @map("requester_id")
+  addresseeId String           @map("addressee_id")
+  status      FriendshipStatus @default(PENDING)
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+
+  requester User @relation("FriendshipRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  addressee User @relation("FriendshipAddressee", fields: [addresseeId], references: [id], onDelete: Cascade)
+
+  @@unique([requesterId, addresseeId])
+  @@index([addresseeId, status])
+  @@map("friendships")
+}
