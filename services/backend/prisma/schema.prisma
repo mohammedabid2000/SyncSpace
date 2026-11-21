@@ -34,6 +34,7 @@ model User {
   referencedMemberships RoomMember[]   @relation("MemberReferencedByUser")
   sentFriendRequests    Friendship[]   @relation("FriendshipRequester")
   receivedFriendships   Friendship[]   @relation("FriendshipAddressee")
+  ownedWorkspaces       Workspace[]    @relation("WorkspaceOwner")
 
   @@map("users")
 }
@@ -52,14 +53,31 @@ model RefreshToken {
   @@map("refresh_tokens")
 }
 
+model Workspace {
+  id          String   @id @default(uuid())
+  name        String
+  slug        String   @unique
+  description String?
+  ownerId     String   @map("owner_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  owner User   @relation("WorkspaceOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  rooms Room[]
+
+  @@map("workspaces")
+}
+
 model Room {
   id          String   @id @default(uuid())
   name        String
   description String?
   isPrivate   Boolean  @default(false) @map("is_private")
+  workspaceId String?  @map("workspace_id")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
+  workspace         Workspace?   @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
   members           RoomMember[] @relation("MemberRoom")
   referencedMembers RoomMember[] @relation("MemberReferencedRoom")
   messages          Message[]

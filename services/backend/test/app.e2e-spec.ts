@@ -30,6 +30,36 @@ describe('AppController (e2e)', () => {
       .expect({ status: 'ok', database: 'connected' });
   });
 
+  it('/users (POST & GET) - programmatic create and findMany', async () => {
+    const uniqueSuffix = Date.now();
+    const newUser = {
+      username: `test_${uniqueSuffix}`,
+      email: `test_${uniqueSuffix}@example.com`,
+      passwordHash: 'hashed_password_abc',
+      displayName: 'Prisma Test User',
+    };
+
+    // Programmatic write (create)
+    const postRes = await request(app.getHttpServer())
+      .post('/users')
+      .send(newUser)
+      .expect(201);
+
+    expect(postRes.body).toHaveProperty('id');
+    expect(postRes.body.username).toBe(newUser.username);
+    expect(postRes.body.email).toBe(newUser.email);
+
+    // Programmatic read (findMany)
+    const getRes = await request(app.getHttpServer())
+      .get('/users')
+      .expect(200);
+
+    expect(Array.isArray(getRes.body)).toBe(true);
+    const found = getRes.body.find((u: { username: string }) => u.username === newUser.username);
+    expect(found).toBeDefined();
+    expect(found.id).toBe(postRes.body.id);
+  });
+
   afterEach(async () => {
     await app.close();
   });
