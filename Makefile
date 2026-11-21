@@ -1,7 +1,7 @@
 # Prefer local configuration; fall back to the local development example.
 ENV_FILE ?= $(if $(wildcard .env),.env,.env.example)
 COMPOSE = docker compose --env-file $(ENV_FILE)
-SERVICES ?= frontend nginx postgres backend
+SERVICES ?= frontend nginx postgres backend elasticsearch logstash kibana filebeat
 HTTP_URL ?= http://localhost:8080
 HTTPS_URL ?= https://localhost:8443
 
@@ -18,6 +18,7 @@ logs:
 	$(COMPOSE) logs -f $(SERVICES)
 
 re: certs
+	$(COMPOSE) down -v
 	$(COMPOSE) up -d --build --force-recreate $(SERVICES)
 
 config:

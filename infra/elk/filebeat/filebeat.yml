@@ -1,0 +1,9 @@
+filebeat.inputs:
+  - type: filestream
+    id: syncspace-nginx-access
+    paths:
+      - /var/log/syncspace/access.json
+    prospector.scanner.check_interval: 2s
+
+output.logstash:
+  hosts: ["logstash:5044"]

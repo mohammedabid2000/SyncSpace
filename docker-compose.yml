@@ -1,4 +1,3 @@
-# Default Makefile target starts frontend, nginx and PostgreSQL for local development.
 
 networks:
   database:
@@ -15,6 +14,8 @@ volumes:
   elasticsearch_data:
   prometheus_data:
   grafana_data:
+  nginx_access_logs:
+  filebeat_data:
 
 services:
   # Keep the image's working ModSecurity/CRS configuration and templates.
@@ -37,6 +38,7 @@ services:
     volumes:
       - ./infra/nginx/certs/server.crt:/etc/nginx/conf/server.crt:ro
       - ./infra/nginx/certs/server.key:/etc/nginx/conf/server.key:ro
+      - nginx_access_logs:/var/log/syncspace
     depends_on:
       frontend:
         condition: service_healthy
@@ -113,6 +115,7 @@ services:
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=true
+      - ELASTIC_USER=$(ELASTIC_USER)
       - ELASTIC_PASSWORD=${ELASTIC_PASSWORD:-changeme_elastic_password}
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
     volumes:
@@ -125,16 +128,67 @@ services:
       timeout: 10s
       retries: 5
 
+  # Create the log index template and a writer with access to that index pattern.
+  logstash-init:
+    image: docker.elastic.co/kibana/kibana:8.11.0
+    restart: "no"
+    entrypoint: ["/usr/share/kibana/node/bin/node", "/usr/local/bin/logstash-init.cjs"]
+    environment:
+      ELASTIC_PASSWORD: ${ELASTIC_PASSWORD:-changeme_elastic_password}
+      LOGSTASH_ES_PASSWORD: ${LOGSTASH_ES_PASSWORD:-changeme_logstash_password}
+    volumes:
+      - ./infra/elk/logstash/init.cjs:/usr/local/bin/logstash-init.cjs:ro
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - backend
+
   # ---------- LOGSTASH ----------
   logstash:
     image: docker.elastic.co/logstash/logstash:8.11.0
     container_name: syncspace-logstash
     restart: unless-stopped
     volumes:
-      - ./infra/elk/logstash/pipeline:/usr/share/logstash/pipeline
-      - ./infra/elk/logstash/config:/usr/share/logstash/config
+      - ./infra/elk/logstash/pipeline:/usr/share/logstash/pipeline:ro
     environment:
-      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD:-changeme_elastic_password}
+      LOGSTASH_ES_PASSWORD: ${LOGSTASH_ES_PASSWORD:-changeme_logstash_password}
+      LS_JAVA_OPTS: -Xms256m -Xmx256m
+      PIPELINE_WORKERS: "1"
+      MONITORING_ENABLED: "false"
+    depends_on:
+      logstash-init:
+        condition: service_completed_successfully
+    networks:
+      - backend
+
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:8.11.0
+    restart: unless-stopped
+    command: ["-e"]
+    volumes:
+      - ./infra/elk/filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - nginx_access_logs:/var/log/syncspace:ro
+      - filebeat_data:/usr/share/filebeat/data
+    depends_on:
+      nginx:
+        condition: service_healthy
+      logstash:
+        condition: service_started
+    networks:
+      - backend
+
+  # Set the Kibana service credential in Elasticsearch before Kibana starts.
+  kibana-init:
+    image: docker.elastic.co/kibana/kibana:8.11.0
+    restart: "no"
+    entrypoint: ["/usr/share/kibana/node/bin/node", "/usr/local/bin/kibana-init.cjs"]
+    environment:
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+      ELASTIC_PASSWORD: ${ELASTIC_PASSWORD:-changeme_elastic_password}
+      KIBANA_PASSWORD: ${KIBANA_PASSWORD:-changeme_kibana_password}
+    volumes:
+      - ./infra/elk/kibana/init.cjs:/usr/local/bin/kibana-init.cjs:ro
     depends_on:
       elasticsearch:
         condition: service_healthy
@@ -151,10 +205,10 @@ services:
       - ELASTICSEARCH_USERNAME=kibana_system
       - ELASTICSEARCH_PASSWORD=${KIBANA_PASSWORD:-changeme_kibana_password}
     ports:
-      - "5601:5601"
+      - "127.0.0.1:5601:5601"
     depends_on:
-      elasticsearch:
-        condition: service_healthy
+      kibana-init:
+        condition: service_completed_successfully
     networks:
       - backend
 
