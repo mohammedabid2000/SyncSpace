@@ -1,30 +1,96 @@
 import { useState } from "react";
-import { Link } from "react-router";
-import { ImageIcon, UserRound, Plus, LogIn } from "lucide-react";
+import { useNavigate } from "react-router";
+import { UserRound, Plus, LogIn, Pencil } from "lucide-react";
 import defaultCover from "../assets/defaultCover.webp";
+import PopUp from "../components/PopUp";
+import AppNav from "../components/AppNav";
+import Avatar from "../components/Avatar";
+import { TextField } from "../components/TextField";
+import Button from "../components/Button";
+import Card from "../components/Card";
+import Toast from "../components/Toast";
+import yasserPhoto from "../assets/avatars/yasser.svg";
+
 
 // TODO: replace with the real user from the backend (the one who signed in)
-const user = { username: "Yasser", email: "yasser@example.com" };
+// photo = preview data only, so the UI looks complete before the backend exists
+const INITIAL_USER = { username: "Yasser", email: "yasser@example.com", photo: yasserPhoto };
 
 const MAX_SIZE_MB = 5;
 
-// Profile photo, or the first letter of the username if there's none (default avatar).
-// Used twice: small in the top bar, big in the profile card.
-function Avatar({ src, letter, className }) {
-  return src ? (
-    <img src={src} alt="" className={`rounded-full object-cover ${className}`} />
-  ) : (
-    <div className={`flex items-center justify-center rounded-full bg-primary font-bold uppercase text-white ${className}`}>
-      {letter}
-    </div>
-  );
-}
-
 function Home() {
-  // Local preview URLs of the chosen images (null = no image yet)
+  // The saved profile (username + email)
+  const [user, setUser] = useState(INITIAL_USER);
+  // Saved photos: local preview URLs of uploaded images (null = use the default)
   const [avatar, setAvatar] = useState(null);
   const [cover, setCover] = useState(null);
   const [error, setError] = useState("");
+
+  // ===== EDIT MODE =====
+  // While editing, changes go into "drafts". Save applies them, Cancel throws them away.
+  const [editing, setEditing] = useState(false);
+  const [draftUsername, setDraftUsername] = useState("");
+  const [draftEmail, setDraftEmail] = useState("");
+  const [draftAvatar, setDraftAvatar] = useState(null); // null = photo not changed
+  const [draftCover, setDraftCover] = useState(null);
+  const [fieldErrors, setFieldErrors] = useState({ username: "", email: "" });
+  const [toast, setToast] = useState(""); // "Profile saved" message after Save
+
+  function startEditing() {
+    setDraftUsername(user.username);
+    setDraftEmail(user.email);
+    setDraftAvatar(null);
+    setDraftCover(null);
+    setFieldErrors({ username: "", email: "" });
+    setError("");
+    setEditing(true);
+  }
+
+  function cancelEditing() {
+    // Free the previews of photos that were picked but not saved
+    if (draftAvatar) URL.revokeObjectURL(draftAvatar);
+    if (draftCover) URL.revokeObjectURL(draftCover);
+    setDraftAvatar(null);
+    setDraftCover(null);
+    setError("");
+    setEditing(false);
+  }
+
+  function saveProfile(event) {
+    event.preventDefault(); // stop the browser from reloading the page
+
+    // Frontend validation
+    const username = draftUsername.trim();
+    const email = draftEmail.trim();
+    const newErrors = {
+      username: !/^[A-Za-z0-9_]{3,20}$/.test(username)
+        ? "3 to 20 characters: letters, numbers and _ only"
+        : "",
+      email: !/^\S+@\S+\.\S+$/.test(email) ? "Enter a valid email" : "",
+    };
+    setFieldErrors(newErrors);
+    if (newErrors.username || newErrors.email) return;
+
+    setUser({ ...user, username, email });
+    // Apply the new photos (and free the old previews)
+    if (draftAvatar) {
+      if (avatar) URL.revokeObjectURL(avatar);
+      setAvatar(draftAvatar);
+    }
+    if (draftCover) {
+      if (cover) URL.revokeObjectURL(cover);
+      setCover(draftCover);
+    }
+    setDraftAvatar(null);
+    setDraftCover(null);
+    setEditing(false);
+    setToast("Profile saved");
+    // TODO: send { username, email } and the new photos to the backend
+  }
+
+  // What is shown: the draft photo while editing (if one was picked), else the saved one
+  const shownAvatar = (editing && draftAvatar) || avatar || user.photo;
+  const shownCover = (editing && draftCover) || cover || defaultCover;
 
   // Shared by both uploads: checks the file, then shows a preview
   function handleImage(event, setImage) {
@@ -34,11 +100,11 @@ function Home() {
 
     // Frontend validation: type and size
     if (!file.type.startsWith("image/")) {
-      setError("Please choose an image file (JPG, PNG or WebP).");
+      setError("Choose an image file (JPG, PNG or WebP)");
       return;
     }
     if (file.size > MAX_SIZE_MB * 1024 * 1024) {
-      setError(`The image must be smaller than ${MAX_SIZE_MB} MB.`);
+      setError(`The image must be smaller than ${MAX_SIZE_MB} MB`);
       return;
     }
 
@@ -50,131 +116,249 @@ function Home() {
     });
     // TODO: upload the file to the backend
   }
+  const navigate = useNavigate();
+
+  // Join Room popup: open/closed, what the user types, and the error message
+  const [showPopUp, setShowPopUp] = useState(false);
+  const [roomCode, setRoomCode] = useState("");
+  const [joinError, setJoinError] = useState("");
+
+  function closeJoinPopUp() {
+    setShowPopUp(false);
+    setJoinError("");
+  }
+
+  // Called when the user clicks "Join" (or presses Enter in the input)
+  function handleJoin(event) {
+    event.preventDefault(); // stop the browser from reloading the page
+
+    // Frontend validation: the field is required
+    if (roomCode.trim() === "") {
+      setJoinError("Enter a room link or code");
+      return;
+    }
+
+    closeJoinPopUp();
+    // TODO: send roomCode to the backend to check the room exists, then open that room
+    navigate("/stream");
+  }
+
+  // Create Room popup: open/closed, the room name, and the error message
+  const [showCreatePopUp, setShowCreatePopUp] = useState(false);
+  const [roomName, setRoomName] = useState("");
+  const [createError, setCreateError] = useState("");
+
+  function closeCreatePopUp() {
+    setShowCreatePopUp(false);
+    setCreateError("");
+  }
+
+  // Called when the user clicks "Create" (or presses Enter in the input)
+  function handleCreate(event) {
+    event.preventDefault(); // stop the browser from reloading the page
+
+    // Frontend validation: name required, 3 to 40 characters
+    const name = roomName.trim();
+    if (name === "") {
+      setCreateError("Enter a room name");
+      return;
+    }
+    if (name.length < 3 || name.length > 40) {
+      setCreateError("Use 3 to 40 characters");
+      return;
+    }
+
+    closeCreatePopUp();
+    // TODO: send the room name to the backend to create the room, then open that room
+    navigate("/stream");
+  }
 
   return (
+
     <div className="min-h-screen">
-      {/* ===== TOP BAR: logo left, "Home" + small avatar right ===== */}
-      <header className="border-b border-border bg-card">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
-          <Link to="/" className="flex items-center gap-2">
-            <img src="/syncspace-logo.svg" alt="" className="h-9 w-auto" />
-            <span className="text-2xl font-bold tracking-tight text-secondary">SyncSpace</span>
-          </Link>
+      {/* ===== TOP BAR (shared with the Friends page): logo, Home / Friends links, avatar ===== */}
+      <AppNav avatar={avatar ?? user.photo} name={user.username} />
 
-          <nav className="flex items-center gap-6">
-            {/* Current page: underlined */}
-            <Link to="/home" aria-current="page" className="border-b-2 border-secondary py-1 text-sm font-medium text-secondary">
-              Home
-            </Link>
-            <Avatar src={avatar} letter={user.username[0]} className="size-10 text-sm" />
-          </nav>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-6xl px-4 py-6 md:px-6">
+      <main className="mx-auto max-w-6xl px-4 pt-6 pb-16 md:px-6 md:pt-8">
         {/* ===== PROFILE CARD ===== */}
-        <section className="overflow-hidden rounded-2xl border border-accent bg-card shadow-sm">
-          {/* Cover photo: the user's upload, or the default green cover */}
+        <Card as="section" className="overflow-hidden">
+          {/* Cover photo: the user's upload, or the default cover */}
           <div className="relative h-44 md:h-72">
-            <img src={cover ?? defaultCover} alt="" className="h-full w-full object-cover" />
+            {/* object-right: the default cover has its logo on the right, keep it visible on narrow screens */}
+            <img src={shownCover} alt="" className={`h-full w-full object-cover ${shownCover === defaultCover ? "object-right" : ""}`} />
 
-            {/* The <label> is the visible button; the real file input is hidden inside it */}
-            <label className="absolute right-4 top-4 flex cursor-pointer items-center gap-2 rounded-lg bg-secondary/90 py-2 pl-3 pr-4 text-sm font-medium text-white hover:bg-secondary focus-within:ring-2 focus-within:ring-white">
-              <ImageIcon className="size-4" aria-hidden="true" />
-              Edit cover
-              <input type="file" accept="image/*" className="sr-only" onChange={(e) => handleImage(e, setCover)} />
-            </label>
+            {/* Edit mode only: pencil button to change the cover.
+                The <label> is the visible button; the real file input is hidden inside it */}
+            {editing && (
+              <label className="absolute right-4 top-4 flex size-10 cursor-pointer items-center justify-center rounded-full bg-card text-secondary shadow-[0_2px_8px_rgb(13_36_52/16%)] transition-colors duration-150 hover:bg-accent focus-within:ring-2 focus-within:ring-ring">
+                <Pencil className="size-[18px]" aria-hidden="true" />
+                <span className="sr-only">Change cover photo</span>
+                <input type="file" accept="image/*" className="sr-only" onChange={(e) => handleImage(e, setDraftCover)} />
+              </label>
+            )}
           </div>
 
-          <div className="px-6 pb-8 md:px-10">
+          <div className="px-6 pb-8 md:px-8">
             <div className="flex flex-col gap-4 md:flex-row md:gap-8">
               {/* Big profile photo, overlapping the cover (negative margin-top) */}
-              <Avatar
-                src={avatar}
-                letter={user.username[0]}
-                className="relative z-10 -mt-16 size-32 shrink-0 border-4 border-card text-5xl md:-mt-24 md:size-44"
-              />
+              <div className="relative z-10 -mt-16 size-32 shrink-0 md:-mt-20 md:size-40">
+                <Avatar
+                  src={shownAvatar}
+                  name={user.username}
+                  className="size-full border-4 border-card text-5xl"
+                />
+                {/* Edit mode only: pencil button to change the profile photo */}
+                {editing && (
+                  <label className="absolute bottom-1 right-1 flex size-10 cursor-pointer items-center justify-center rounded-full border-2 border-card bg-secondary text-white transition-colors duration-150 hover:bg-secondary-hover focus-within:ring-2 focus-within:ring-ring md:bottom-2 md:right-2">
+                    <Pencil className="size-4" aria-hidden="true" />
+                    <span className="sr-only">Change profile photo</span>
+                    <input type="file" accept="image/*" className="sr-only" onChange={(e) => handleImage(e, setDraftAvatar)} />
+                  </label>
+                )}
+              </div>
 
-              <div className="flex-1 md:pt-5">
+              {/* A form, so pressing Enter in an input also saves */}
+              <form onSubmit={saveProfile} noValidate className="min-w-0 flex-1 md:pt-6">
                 {/* Title + Edit profile button */}
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
-                    <h1 className="text-2xl font-bold tracking-tight text-secondary md:text-3xl">
-                      Welcome back, {user.username}
+                  <div className="min-w-0">
+                    <h1 className="truncate text-[28px] font-medium leading-tight tracking-[-0.01em] text-secondary md:text-[32px]">
+                      {user.username}
                     </h1>
-                    <p className="mt-1 text-muted-foreground">Your space for watching together.</p>
+                    <p className="mt-1 truncate text-muted-foreground">{user.email}</p>
                   </div>
 
-                  {/* Edit profile = change the profile photo */}
-                  <label className="flex w-fit shrink-0 cursor-pointer items-center gap-2 rounded-lg border border-border py-2 pl-3 pr-4 text-sm font-medium text-secondary hover:bg-accent focus-within:ring-2 focus-within:ring-ring">
-                    <UserRound className="size-4" aria-hidden="true" />
-                    Edit profile
-                    <input type="file" accept="image/*" className="sr-only" onChange={(e) => handleImage(e, setAvatar)} />
-                  </label>
+                  {/* Not editing: "Edit profile". Editing: "Cancel" + "Save" */}
+                  {editing ? (
+                    <div className="flex shrink-0 gap-2">
+                      <Button variant="subtle" onClick={cancelEditing}>Cancel</Button>
+                      <Button type="submit">Save</Button>
+                    </div>
+                  ) : (
+                    <Button variant="subtle" onClick={startEditing} className="w-fit shrink-0">
+                      <UserRound className="size-4" aria-hidden="true" />
+                      Edit profile
+                    </Button>
+                  )}
                 </div>
 
                 {/* Upload error (wrong type / too big) */}
                 {error && (
-                  <p role="alert" className="mt-4 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                  <p role="alert" className="mt-4 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
                     {error}
                   </p>
                 )}
 
-                {/* Info — read only (what the user entered when signing up) */}
-                <dl className="mt-5 grid max-w-md grid-cols-[7rem_1fr] gap-y-3 border-t border-border pt-5 text-sm">
-                  <dt className="font-medium text-muted-foreground">Username</dt>
-                  <dd className="text-secondary">{user.username}</dd>
-                  <dt className="font-medium text-muted-foreground">Email</dt>
-                  <dd className="truncate text-secondary">{user.email}</dd>
-                </dl>
-              </div>
+                {/* Edit mode: the inputs (the name and email are shown in the title otherwise) */}
+                {editing && (
+                  <div className="mt-6 grid max-w-md gap-4 border-t border-border pt-6">
+                    <TextField
+                      id="edit-username"
+                      label="Username"
+                      autoComplete="username"
+                      maxLength={20}
+                      value={draftUsername}
+                      onChange={setDraftUsername}
+                      error={fieldErrors.username}
+                    />
+                    <TextField
+                      id="edit-email"
+                      label="Email"
+                      type="email"
+                      autoComplete="email"
+                      value={draftEmail}
+                      onChange={setDraftEmail}
+                      error={fieldErrors.email}
+                    />
+                  </div>
+                )}
+              </form>
             </div>
           </div>
-        </section>
+        </Card>
 
-        {/* ===== READY TO WATCH ===== */}
-        <section className="mx-auto mt-12 max-w-5xl text-center">
-          <h2 className="text-3xl font-bold tracking-tight text-secondary">Ready to watch?</h2>
-          <p className="mt-2 text-muted-foreground">
-            Create a room to invite others or join with a code to watch together.
+        {/* ===== WATCH TOGETHER: create (wide, navy) | join (narrow, white) ===== */}
+        <section aria-labelledby="watch-title" className="mt-12">
+          <h2 id="watch-title" className="text-2xl font-medium tracking-[-0.01em] text-secondary">Watch together</h2>
+          <p className="mt-1 text-muted-foreground">
+            Create a room to invite friends, or join one with a code
           </p>
 
-          {/* 2 cards side by side on desktop, stacked on phones */}
-          <div className="mt-8 grid gap-6 md:grid-cols-2">
-            {/* Create Room — navy card */}
-            <div className="flex flex-col items-center gap-1 rounded-2xl bg-secondary px-6 py-5 text-white">
-              <div className="flex size-10 items-center justify-center rounded-full bg-white/10">
-                <Plus className="size-5" aria-hidden="true" />
-              </div>
-              <h3 className="text-xl font-bold tracking-tight">Create Room</h3>
-              <p className="text-white/80">Start a new watch party and invite your friends.</p>
-              {/* TODO: go to the create room page */}
-              <button
-                type="button"
-                className="mt-3 w-full max-w-60 rounded-lg bg-white py-2 text-sm font-semibold text-secondary hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-              >
-                Create Room
-              </button>
+          {/* Stacked on phones, 3:2 on desktop */}
+          <div className="mt-6 grid gap-4 md:grid-cols-[3fr_2fr]">
+            <div className="flex flex-col items-start rounded-2xl bg-secondary p-6 text-white md:p-8">
+              <h3 className="text-xl font-medium">Start a room</h3>
+              <p className="mt-1 text-white/70">Pick a name, then send the invite link to your friends</p>
+              {/* Opens the Create Room popup */}
+              <Button variant="light" onClick={() => setShowCreatePopUp(true)} className="mt-6">
+                <Plus className="size-4" aria-hidden="true" />
+                Create room
+              </Button>
             </div>
 
-            {/* Join Room — white card */}
-            <div className="flex flex-col items-center gap-1 rounded-2xl border border-accent bg-card px-6 py-5 shadow-sm">
-              <div className="flex size-10 items-center justify-center rounded-full bg-accent text-secondary">
-                <LogIn className="size-5" aria-hidden="true" />
-              </div>
-              <h3 className="text-xl font-bold tracking-tight text-secondary">Join Room</h3>
-              <p className="text-muted-foreground">Enter a room code to join a watch party.</p>
-              {/* TODO: open the "enter room code" form */}
-              <button
-                type="button"
-                className="mt-3 w-full max-w-60 rounded-lg border-2 border-secondary py-1.5 text-sm font-semibold text-secondary hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-              >
-                Join Room
-              </button>
-            </div>
+            <Card className="flex flex-col items-start p-6 md:p-8">
+              <h3 className="text-xl font-medium text-secondary">Join a room</h3>
+              <p className="mt-1 text-muted-foreground">Paste an invite link or a room code</p>
+              {/* Opens the Join Room popup */}
+              <Button variant="outline" onClick={() => setShowPopUp(true)} className="mt-6">
+                <LogIn className="size-4" aria-hidden="true" />
+                Join room
+              </Button>
+            </Card>
           </div>
         </section>
       </main>
+
+      {/* ===== JOIN ROOM POPUP (hidden until showPopUp is true) ===== */}
+      <PopUp showPopUp={showPopUp} closePopUp={closeJoinPopUp} title="Join a room">
+        <p className="mt-1 text-sm text-muted-foreground">
+          Paste the invite link or enter the room code
+        </p>
+
+        {/* noValidate: we show our own error message instead of the browser's */}
+        <form onSubmit={handleJoin} noValidate className="mt-6 flex flex-col gap-4">
+          <TextField
+            id="room-code"
+            label="Room link or code"
+            placeholder="e.g. https://syncspace.app/room/abc123"
+            value={roomCode}
+            onChange={setRoomCode}
+            error={joinError}
+          />
+
+          <Button type="submit" className="mt-1">
+            <LogIn className="size-4" aria-hidden="true" />
+            Join
+          </Button>
+        </form>
+      </PopUp>
+
+      {/* ===== CREATE ROOM POPUP (hidden until showCreatePopUp is true) ===== */}
+      <PopUp showPopUp={showCreatePopUp} closePopUp={closeCreatePopUp} title="Create a room">
+        <p className="mt-1 text-sm text-muted-foreground">
+          Give your watch party a name, then invite your friends
+        </p>
+
+        {/* noValidate: we show our own error message instead of the browser's */}
+        <form onSubmit={handleCreate} noValidate className="mt-6 flex flex-col gap-4">
+          <TextField
+            id="room-name"
+            label="Room name"
+            maxLength={40}
+            placeholder="e.g. Friday movie night"
+            value={roomName}
+            onChange={setRoomName}
+            error={createError}
+          />
+
+          <Button type="submit" className="mt-1">
+            <Plus className="size-4" aria-hidden="true" />
+            Create
+          </Button>
+        </form>
+      </PopUp>
+
+      <Toast message={toast} onDone={() => setToast("")} />
     </div>
   );
 }
