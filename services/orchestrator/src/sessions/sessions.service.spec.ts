@@ -50,7 +50,7 @@ describe('SessionsService', () => {
       id: 1,
       status: 'created',
       containerId: 'neko-container-1',
-      httpPort: 8080,
+      httpPort: 8180,
       udpPort: 55000,
     });
     expect(session.credentials.ownerPassword).toMatch(/^[0-9a-f]{64}$/);
@@ -58,7 +58,7 @@ describe('SessionsService', () => {
     expect(session.credentials.ownerPassword).not.toBe(session.credentials.viewerPassword);
 
     expect(startLocal).toHaveBeenCalledWith(
-      8080,
+      8180,
       55000,
       1,
       session.credentials.ownerPassword,
@@ -69,7 +69,7 @@ describe('SessionsService', () => {
       id: 1,
       status: 'created',
       containerId: 'neko-container-1',
-      httpPort: 8080,
+      httpPort: 8180,
       udpPort: 55000,
     });
     expect(await service.list()).toEqual([stored]);
@@ -81,10 +81,10 @@ describe('SessionsService', () => {
   it('gives concurrent sessions separate ports and reuses a released slot', async () => {
     const first = await service.create();
     const second = await service.create();
-    expect(second).toMatchObject({ id: 2, httpPort: 8081, udpPort: 55001 });
+    expect(second).toMatchObject({ id: 2, httpPort: 8181, udpPort: 55001 });
     expect(startLocal).toHaveBeenNthCalledWith(
       2,
-      8081,
+      8181,
       55001,
       2,
       second.credentials.ownerPassword,
@@ -93,7 +93,7 @@ describe('SessionsService', () => {
     expect(first.credentials.ownerPassword).not.toBe(second.credentials.ownerPassword);
     await service.delete(first.id);
     const third = await service.create();
-    expect(third).toMatchObject({ id: 3, httpPort: 8080, udpPort: 55000 });
+    expect(third).toMatchObject({ id: 3, httpPort: 8180, udpPort: 55000 });
   });
 
   it('releases a reserved port when starting Neko fails', async () => {
@@ -101,12 +101,33 @@ describe('SessionsService', () => {
     await expect(service.create()).rejects.toThrow('Docker start failed');
 
     const session = await service.create();
-    expect(session).toMatchObject({ id: 2, httpPort: 8080, udpPort: 55000 });
+    expect(session).toMatchObject({ id: 2, httpPort: 8180, udpPort: 55000 });
   });
 
   it('restores labeled containers and reserves their ports on startup', async () => {
     running.push({
       Id: 'existing-container',
+      Labels: {
+        'com.syncspace.http-port': '8180',
+        'com.syncspace.udp-port': '55000',
+        'com.syncspace.session-id': '7',
+      },
+    });
+
+    await service.onModuleInit();
+    await expect(service.get(7)).resolves.toMatchObject({
+      containerId: 'existing-container',
+      httpPort: 8180,
+      udpPort: 55000,
+    });
+
+    const next = await service.create();
+    expect(next).toMatchObject({ id: 8, httpPort: 8181, udpPort: 55001 });
+  });
+
+  it('restores sessions created with the previous HTTP port range', async () => {
+    running.push({
+      Id: 'old-container',
       Labels: {
         'com.syncspace.http-port': '8080',
         'com.syncspace.udp-port': '55000',
@@ -116,13 +137,14 @@ describe('SessionsService', () => {
 
     await service.onModuleInit();
     await expect(service.get(7)).resolves.toMatchObject({
-      containerId: 'existing-container',
+      containerId: 'old-container',
       httpPort: 8080,
-      udpPort: 55000,
     });
 
     const next = await service.create();
-    expect(next).toMatchObject({ id: 8, httpPort: 8081, udpPort: 55001 });
+    expect(next).toMatchObject({ id: 8, httpPort: 8180, udpPort: 55000 });
+    await service.delete(7);
+    expect(stopLocal).toHaveBeenCalledWith('old-container');
   });
 
   it('removes a browser that stopped outside the API and reuses its ports', async () => {
@@ -131,6 +153,6 @@ describe('SessionsService', () => {
 
     await expect(service.get(first.id)).rejects.toThrow('Session not found');
     const second = await service.create();
-    expect(second).toMatchObject({ id: 2, httpPort: 8080, udpPort: 55000 });
+    expect(second).toMatchObject({ id: 2, httpPort: 8180, udpPort: 55000 });
   });
 });

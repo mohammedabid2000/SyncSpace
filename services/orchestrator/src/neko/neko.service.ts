@@ -22,7 +22,7 @@ export class NekoService {
       },
       Env: [
         `NEKO_WEBRTC_UDPMUX=${udpPort}`,
-        'NEKO_WEBRTC_NAT1TO1=127.0.0.1',
+        `NEKO_WEBRTC_NAT1TO1=${process.env.NEKO_WEBRTC_NAT1TO1 || '127.0.0.1'}`,
         `NEKO_MEMBER_MULTIUSER_USER_PASSWORD=${viewerPassword}`,
         'NEKO_MEMBER_MULTIUSER_USER_PROFILE={"can_login":true,"can_connect":true,"can_watch":true,"can_host":false,"can_share_media":false,"can_access_clipboard":false}',
         `NEKO_MEMBER_MULTIUSER_ADMIN_PASSWORD=${ownerPassword}`,

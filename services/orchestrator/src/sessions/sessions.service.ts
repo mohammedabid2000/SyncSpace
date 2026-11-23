@@ -7,7 +7,8 @@ import {
 import { randomBytes } from 'node:crypto';
 import { NekoService } from '../neko/neko.service.js';
 
-const HTTP_PORT_START = 8080;
+const HTTP_PORT_START = 8180;
+const LEGACY_HTTP_PORT_START = 8080;
 const UDP_PORT_START = 55000;
 const MAX_SESSIONS = 100;
 
@@ -112,16 +113,17 @@ export class SessionsService implements OnModuleInit {
       const httpPort = Number(container.Labels['com.syncspace.http-port']);
       const udpPort = Number(container.Labels['com.syncspace.udp-port']);
       const slot = httpPort - HTTP_PORT_START;
+      const legacySlot = httpPort - LEGACY_HTTP_PORT_START;
+      const currentPort = Number.isInteger(slot) && slot >= 0 && slot < MAX_SESSIONS;
+      const legacyPort = Number.isInteger(legacySlot) && legacySlot >= 0 && legacySlot < MAX_SESSIONS;
 
       if (
-        !Number.isInteger(slot) ||
-        slot < 0 ||
-        slot >= MAX_SESSIONS ||
-        udpPort !== UDP_PORT_START + slot
+        (!currentPort || udpPort !== UDP_PORT_START + slot) &&
+        (!legacyPort || udpPort !== UDP_PORT_START + legacySlot)
       ) {
         continue;
       }
-      this.usedSlots.add(slot);
+      if (currentPort) this.usedSlots.add(slot);
 
       const id = Number(container.Labels['com.syncspace.session-id']);
       if (!Number.isSafeInteger(id) || id <= 0) continue;

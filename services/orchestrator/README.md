@@ -8,11 +8,11 @@ Use Node.js 22.22.3 or newer and a running Docker daemon. Dockerode reads `DOCKE
 
 ```sh
 cd services/orchestrator
-npx --yes npm@12.2.1 ci
-ORCHESTRATOR_API_TOKEN=local-dev-token DOCKER_HOST=unix:///run/user/$(id -u)/docker.sock npm run start:dev
+npm ci
+ORCHESTRATOR_API_TOKEN=local-dev-token npm run start:dev
 ```
 
-If your Docker daemon uses `/var/run/docker.sock`, use `ORCHESTRATOR_API_TOKEN=local-dev-token npm run start:dev` instead. The API listens on port 3000 by default; set `PORT` to change it. The token above is only a local example. Use a long random token for any shared environment, keep it out of Git, and give it only to the main backend.
+Dockerode uses the default Docker socket. For rootless Docker, set `DOCKER_HOST=unix:///run/user/$(id -u)/docker.sock` before starting the app. The API listens on port 3000 by default; set `PORT` to change it. The token above is only a local example. Use a long random token for any shared environment, keep it out of Git, and give it only to the main backend.
 
 Pull the Neko Firefox image before starting a session:
 
@@ -20,7 +20,7 @@ Pull the Neko Firefox image before starting a session:
 docker pull ghcr.io/m1k1o/neko/firefox:latest
 ```
 
-Each running session gets a unique port pair. The app currently uses HTTP ports `8080–8179` and UDP ports `55000–55099`, reusing a pair after its session stops. For local testing, open the URL using the `httpPort` returned by `POST /sessions`, for example `http://localhost:8080`. The creation response includes separate random owner and viewer passwords. The owner can watch and control Firefox without Neko admin rights; viewers can watch but cannot control. Neither role can share media or access the Neko clipboard.
+Each running session gets a unique port pair. The app currently uses HTTP ports `8180–8279` and UDP ports `55000–55099`, reusing a pair after its session stops. For local testing, open the URL using the `httpPort` returned by `POST /sessions`, for example `http://localhost:8180`. The creation response includes separate random owner and viewer passwords. The owner can watch and control Firefox without Neko admin rights; viewers can watch but cannot control. Neither role can share media or access the Neko clipboard.
 
 The session list is reconstructed from running, labeled Docker containers when Nest restarts. Session reads and creation also remove records for containers that stopped outside the API and release their ports. This prototype expects the Docker daemon to be available at startup. Credentials appear only in the creation response; the trusted backend must save them because GET and list do not return them later.
 
@@ -33,7 +33,7 @@ curl -H 'x-orchestrator-token: local-dev-token' -X POST http://localhost:3000/se
 curl -H 'x-orchestrator-token: local-dev-token' http://localhost:3000/sessions
 ```
 
-The POST response contains `credentials.ownerPassword` and `credentials.viewerPassword` in addition to the session ID, container ID, and ports. Use those credentials only for local role testing or hand them to the trusted SyncSpace backend. Do not send either password through a public room API or put the orchestrator token in the frontend. The current Neko HTTP and WebRTC settings are for same-computer testing; remote access still needs network configuration and a protected connection path.
+The POST response contains `credentials.ownerPassword` and `credentials.viewerPassword` in addition to the session ID, container ID, and ports. Use those credentials only for local role testing or hand them to the trusted SyncSpace backend. Do not send either password through a public room API or put the orchestrator token in the frontend. The default Neko WebRTC address is for same-computer testing; other clients need a reachable address and a protected connection path.
 
 ## Current routes
 
@@ -47,4 +47,22 @@ The POST response contains `credentials.ownerPassword` and `credentials.viewerPa
 
 Run `npm run build`, `npm test`, and `npm run test:e2e` to verify the prototype. Docker health requires access to a Docker socket; the automated session tests use a mock and do not create containers.
 
-The SyncSpace Compose and Nginx configuration still need to agree on the orchestrator port and `/neko/` URL prefix before this service is enabled in the full stack.
+## Run with Compose
+
+From the repository root, start the service with a private token:
+
+```sh
+export ORCHESTRATOR_API_TOKEN="$(openssl rand -hex 32)"
+docker compose up -d --build orchestrator
+curl -H "x-orchestrator-token: $ORCHESTRATOR_API_TOKEN" -X POST http://127.0.0.1:3100/sessions
+```
+
+The orchestrator listens on `orchestrator:3100` for the backend and on `127.0.0.1:3100` for local testing. Compose mounts `/var/run/docker.sock`, so this setup uses a Docker daemon with that socket and an account allowed to access it. Use the returned `httpPort` for the Neko browser. New sessions begin at `http://localhost:8180`. Sessions created with the earlier port range can still be found and stopped after an orchestrator restart.
+
+Neko advertises `127.0.0.1` for WebRTC by default. When the browser runs on Windows and Docker runs in WSL with NAT networking, set `NEKO_WEBRTC_NAT1TO1` to the WSL IPv4 address before running Compose:
+
+```sh
+export NEKO_WEBRTC_NAT1TO1="$(ip -4 -o addr show dev eth0 | awk '{print $4}' | cut -d/ -f1)"
+```
+
+Recreate an existing Neko session after changing that value. The WSL address can change after a restart. Other viewers need an address they can reach and a protected HTTP connection path. Neko's UDP port must also be reachable for WebRTC. Compose does not configure the frontend or main backend to create room sessions yet.
