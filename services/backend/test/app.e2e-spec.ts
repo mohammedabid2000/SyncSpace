@@ -60,6 +60,48 @@ describe('AppController (e2e)', () => {
     expect(found.id).toBe(postRes.body.id);
   });
 
+  it('/users (POST) - rejects invalid DTO payload with 400', async () => {
+    const invalidUser = {
+      username: 'ab', // < 3 chars
+      email: 'invalid-email-format',
+      passwordHash: '123', // < 6 chars
+      extraField: 'not-allowed', // forbidden non-whitelisted
+    };
+
+    const res = await request(app.getHttpServer())
+      .post('/users')
+      .send(invalidUser)
+      .expect(400);
+
+    expect(Array.isArray(res.body.message)).toBe(true);
+  });
+
+  it('/users/:id (GET) - rejects non-UUID parameter with 400', async () => {
+    await request(app.getHttpServer())
+      .get('/users/123-not-a-uuid')
+      .expect(400);
+  });
+
+  it('/users/:id (PATCH) - validates and updates user with UpdateUserDto', async () => {
+    const uniqueSuffix = Date.now();
+    const created = await request(app.getHttpServer())
+      .post('/users')
+      .send({
+        username: `update_${uniqueSuffix}`,
+        email: `update_${uniqueSuffix}@example.com`,
+        passwordHash: 'secret_hash_123',
+        displayName: 'Original Name',
+      })
+      .expect(201);
+
+    const updateRes = await request(app.getHttpServer())
+      .patch(`/users/${created.body.id}`)
+      .send({ displayName: 'Updated Name' })
+      .expect(200);
+
+    expect(updateRes.body.displayName).toBe('Updated Name');
+  });
+
   afterEach(async () => {
     await app.close();
   });
