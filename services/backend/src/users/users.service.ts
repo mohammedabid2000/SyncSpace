@@ -1,18 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 
-export interface CreateUserDto {
-  username: string;
-  email: string;
-  passwordHash: string;
-  displayName?: string;
-}
-
 @Injectable()
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async createUser(data: CreateUserDto) {
+  async createUser(data: any) {
     return this.prisma.user.create({
       data: {
         username: data.username,
@@ -31,6 +24,16 @@ export class UsersService {
 
   async findUserById(id: string) {
     return this.prisma.user.findUnique({
+      where: { id },
+    });
+  }
+
+  async removeAllUsers() {
+    return this.prisma.user.deleteMany({});
+  }
+
+  async removeUserById(id: string) {
+    return this.prisma.user.delete({
       where: { id },
     });
   }
