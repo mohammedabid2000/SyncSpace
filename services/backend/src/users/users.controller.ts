@@ -1,13 +1,14 @@
-import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Post } from '@nestjs/common';
 import { UsersService } from './users.service.js';
+import { CreateUserDto } from './dto/create_user.dto.js';
 
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Post()
-  async create(@Body() body: any) {
-    return this.usersService.createUser(body);
+  async create(@Body() createUserDto: CreateUserDto) {
+    return this.usersService.createUser(createUserDto);
   }
 
   @Get()
@@ -16,7 +17,7 @@ export class UsersController {
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string) {
+  async findOne(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.usersService.findUserById(id);
   }
 
@@ -26,7 +27,7 @@ export class UsersController {
   }
 
   @Delete(':id')
-  async removeOne(@Param('id') id: string) {
+  async removeOne(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.usersService.removeUserById(id);
   }
 }
