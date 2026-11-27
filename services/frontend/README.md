@@ -73,6 +73,7 @@ Or the whole project from the repo root: `docker compose up --build` (needs the 
 | `/signup` | Sign up | `src/Pages/SignUp.jsx` |
 | `/home` | Profile (edit mode, photos) + Create / Join room | `src/Pages/Home.jsx` |
 | `/friends` | Friends, requests, search, online status | `src/Pages/Friends.jsx` |
+| `/messages` | Direct-message preview for friends | `src/Pages/Messages.jsx` |
 | `/stream` | Room: shared browser, chat, people, settings | `src/Pages/Stream.jsx` |
 | `/privacy` | Privacy Policy | `src/Pages/Privacy.jsx` |
 | `/terms` | Terms of Service | `src/Pages/Terms.jsx` |
@@ -101,7 +102,12 @@ services/frontend/
 └── src/
     ├── main.jsx          entry point: router + all routes
     ├── App.jsx           landing page
-    ├── index.css         theme (colors, fonts, radius) + landing page styles
+    ├── index.css         theme (colors, fonts, radius) and shared styles
+    ├── landing.css       illustrated landing page sections
+    ├── auth/             credential form, layout and Google sign-in option
+    ├── account/          account validation
+    ├── people/           preview user directory
+    ├── rooms/            room actions, sidebar, preview participants and naming rules
     ├── Pages/            one file per page
     ├── components/       shared building blocks (see section 5)
     └── assets/           images imported by the code
@@ -110,7 +116,7 @@ services/frontend/
 
 ## 5. Shared components
 
-All in `src/components/`. They are the **design system**: every page is built from them, so the app looks and behaves the same everywhere. See them all live on `/design-system`.
+Shared UI controls live in `src/components/`. Auth-specific components live in `src/auth/`. They are the **design system**: every page is built from them, so the app looks and behaves the same everywhere. See them all live on `/design-system`.
 
 **Building blocks (UI)**
 
@@ -135,7 +141,7 @@ All in `src/components/`. They are the **design system**: every page is built fr
 
 | Component | What it does | Used in |
 |---|---|---|
-| `AppNav` | top bar of signed-in pages: logo, Home / Friends, avatar **menu** (My profile, Sign out) | Home, Friends |
+| `AppNav` | top bar of signed-in pages: logo, Home, Friends, and Messages links, and a Sign out icon | Home, Friends, Messages |
 | `AuthLayout` + `AuthIllustrationPanel` | card of the auth pages: illustration + logo + title + form | Sign in, Sign up |
 | `LegalLayout` | header, text column, footer links | Privacy, Terms |
 | `FeatureGrid` (in `App.jsx`) | row of features: icon + title + text | landing page |
@@ -214,7 +220,7 @@ The whole frontend is built from these patterns. Understanding them = understand
 | Full-screen overlay (modal) | `fixed inset-0 z-50 bg-secondary/60` | `fixed` = relative to the screen; `inset-0` = all 4 sides at 0; `/60` = 60% opacity | `PopUp` |
 | Click inside the card must not close the modal | `onClick={(e) => e.stopPropagation()}` on the card | stops the click from reaching the overlay's `onClick` | `PopUp` |
 | Overlapping avatars | `flex -space-x-2` + `ring-2 ring-background` on each | negative space overlaps them; the ring separates them | Stream header |
-| Curved background | `::before` with `position: absolute; inset: 0; border-bottom-right-radius: 55% 45%` | a decorative layer behind the section with one huge rounded corner | `hero`, `curve-*` in `index.css` |
+| Curved background | `::before` with `position: absolute; inset: 0; border-bottom-right-radius: 55% 45%` | a decorative layer behind the section with one huge rounded corner | `hero`, `curve-*` in `landing.css` |
 
 **Small details**
 
@@ -234,11 +240,12 @@ The whole frontend is built from these patterns. Understanding them = understand
 ### Landing (`App.jsx`)
 - Sections: hero, two `FeatureGrid` rows, "React to moments together", "Save a seat for your people" with a curved connector line (SVG).
 - Curved backgrounds come from CSS classes `hero`, `curve-navy`, `curve-surface` (`::before` layer with one rounded corner).
-- Header: logo + **Sign in** button. **New Room** and **Get started** (`Button size="lg"`) → `useNavigate("/signin")`.
+- **Start a room** and **Get started** are links to `/signin` styled with `buttonClasses`.
+- The **Account** icon opens a menu with **Sign in** and **Create an account**.
 - Footer links → `/privacy`, `/terms`, `/design-system` (React Router `Link`, imported as `RouterLink` because Lucide also has an icon called `Link`).
 
 ### Sign in / Sign up
-- `AuthLayout` + `TextField` / `PasswordField`.
+- Each page defines its fields and validation rules. `CredentialForm` renders them inside `AuthLayout`.
 - Validation: Sign in = both fields required. Sign up = username required, email like `name@site.com`, password ≥ 8 characters.
 - Navigation to `/home` happens **inside `handleSubmit`, only after validation passes**.
 
@@ -247,7 +254,7 @@ The whole frontend is built from these patterns. Understanding them = understand
 - Photo upload: a hidden `<input type="file">` inside a `<label>`; checks type (image) and size (< 5 MB); preview with `URL.createObjectURL` (old previews freed with `URL.revokeObjectURL`).
 - Default cover image when none is uploaded; preview avatar for the user.
 - **Create Room** popup (name 3–40 chars) and **Join Room** popup (link or code required) → `/stream`.
-- **"Profile saved"** toast after Save. Top bar avatar → menu with **My profile** and **Sign out**.
+- **"Profile saved"** toast after Save. **Sign out** is available directly in the top bar.
 - Phones: the default cover is aligned right (`object-right`) so its logo stays visible.
 
 ### Friends (`/friends`)
@@ -256,6 +263,9 @@ The whole frontend is built from these patterns. Understanding them = understand
 - Add friends: search by username (`.filter()`), button changes to Add / Requested / Friends / Accept.
 - Requests: Accept (becomes a friend) / Decline.
 - Toasts: "Request sent to …", "You and … are now friends", "… was removed from your friends".
+
+### Messages (`/messages`)
+- Open a conversation from the current friends list. Messages are kept in memory during navigation between app pages and reset on reload or sign out.
 
 ### Stream / room (`/stream`)
 - Header: logo, room name, stacked avatars + "3 / 10 people", red pill with **invite link** (copies with `navigator.clipboard`, shows a check for 2 s), **settings**, **leave room**.
@@ -324,7 +334,7 @@ A module only counts at evaluation if it is **fully functional** (tested live). 
 | Module | Status | Notes |
 |---|---|---|
 | Minor: frontend framework (React) | ✅ valid | — |
-| Minor: custom design system (≥ 10 reusable components + palette + typography + icons) | ✅ ready | 14 UI components + 4 layouts in `src/components/`, theme in `index.css`, Lucide icons, all shown on `/design-system` |
+| Minor: custom design system (≥ 10 reusable components + palette + typography + icons) | ✅ ready | UI components and layouts in `src/components/` and `src/auth/`, theme in `index.css`, Lucide icons, all shown on `/design-system` |
 | Minor: PWA (installable + offline) | ✅ ready | manifest + icons + service worker; tested installable and offline in Chrome |
 | Minor: additional browsers | ⚠️ partly | Firefox tested; test Edge (or Safari) and keep the "Browser support" notes in section 9 |
 | Major: frontend + backend frameworks | ⏳ depends on the backend | backend must use a framework |
@@ -365,10 +375,10 @@ Frontend modules that need **no backend**: design system (✅), PWA (✅), addit
 | change a color everywhere | `src/index.css` → `@theme` (e.g. `--color-primary`) |
 | add a page | new file in `src/Pages/` with `export default`, a `<Route>` in `src/main.jsx` (before `*`), a `Link` to it |
 | add a feature card on the landing page | `features` / `features2` arrays at the top of `src/App.jsx` |
-| add a chat emoji | `EMOJIS` in `src/Pages/Stream.jsx` |
-| change the max people limit | `MAX_PEOPLE` in `src/Pages/Stream.jsx` |
-| change the password rule | `handleSubmit` in `src/Pages/SignUp.jsx` |
-| change the max photo size | `MAX_SIZE_MB` in `src/Pages/Home.jsx` |
+| add a chat emoji | `EMOJIS` in `src/rooms/RoomSidebar.jsx` |
+| change the max people limit | `MAX_PEOPLE` in `src/Pages/Stream.jsx` (room settings limit) |
+| change the password rule | the password field definition in `src/Pages/SignUp.jsx` |
+| change the max photo size | `MAX_SIZE_MB` in `src/Pages/Home.jsx` (profile photo upload limit) |
 | add a form field | `<TextField id label value onChange error />` + a `useState` + a check in the submit function |
 | add an icon | `import { Name } from "lucide-react"` → `<Name className="size-5" aria-hidden="true" />` (names on lucide.dev, written in PascalCase) |
 | add a package | `npm install <name>`, then commit `package.json` + `package-lock.json` |
@@ -386,12 +396,11 @@ Search the code for `// TODO` to find every spot. Main ones:
 - **Rooms:** create / join for real, then go to the room's own URL (e.g. `/stream/abc123`); real room name, link, people and limit.
 - **Stream:** start the Neko container and show its `<iframe>`; chat and emojis through WebSocket so everyone sees them; settings saved for everyone (host only).
 - **Friends:** real lists, requests, and live online status (WebSocket).
-- **Preview data** to remove when the backend arrives: the users, photos and messages at the top of `Home.jsx`, `Stream.jsx`, `Friends.jsx`.
+- **Preview data** to remove when the backend arrives: the directory in `src/people/previewPeople.js`, room participants in `src/rooms/previewRoom.js`, sample chat in `RoomSidebar.jsx`, and initial friendships in `Friends.jsx`.
 
 ### Frontend experience checklist (no backend needed)
 
-- [x] **Sign out:** avatar menu in the top bar (Profile, Sign out)
-- [x] **Sign in** button back in the landing page header
+- [x] **Sign out** button in the top bar
 - [x] Auth illustration label says "profile" → change it (e.g. "Watch together")
 - [x] **Focus trap** in `PopUp` + return focus to the opening button (keyboard users)
 - [x] "Saved ✓" feedback after saving the profile / room settings

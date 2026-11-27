@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useEffectEvent, useId, useRef } from "react";
 import { X } from "lucide-react";
 import IconButton from "./IconButton";
 
@@ -10,11 +10,8 @@ const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), selec
 function PopUp({ showPopUp, closePopUp, title, children }) {
   const cardRef = useRef(null);
 
-  // Keep the latest closePopUp without re-running the effect on every render
-  const closeRef = useRef(closePopUp);
-  useEffect(() => {
-    closeRef.current = closePopUp;
-  });
+  const titleId = useId();
+  const handleClose = useEffectEvent(closePopUp);
 
   useEffect(() => {
     if (!showPopUp) return;
@@ -31,7 +28,7 @@ function PopUp({ showPopUp, closePopUp, title, children }) {
 
     // 3. Escape closes — Tab / Shift+Tab loop inside the popup (focus trap)
     function handleKey(event) {
-      if (event.key === "Escape") closeRef.current();
+      if (event.key === "Escape") handleClose();
       if (event.key !== "Tab") return;
       const focusable = [...card.querySelectorAll(FOCUSABLE)];
       const first = focusable[0];
@@ -64,7 +61,7 @@ function PopUp({ showPopUp, closePopUp, title, children }) {
         ref={cardRef}
         role="dialog"
         aria-modal="true"
-        aria-labelledby="popup-title"
+        aria-labelledby={title ? titleId : undefined}
         onClick={(event) => event.stopPropagation()}
         className="animate-pop relative max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl border border-border bg-card p-6 shadow-[0_16px_48px_rgb(13_36_52/18%)]"
       >
@@ -73,7 +70,7 @@ function PopUp({ showPopUp, closePopUp, title, children }) {
         </IconButton>
 
         {title && (
-          <h2 id="popup-title" className="pe-10 text-xl font-medium leading-7 text-secondary">
+          <h2 id={titleId} className="pe-10 text-xl font-medium leading-7 text-secondary">
             {title}
           </h2>
         )}

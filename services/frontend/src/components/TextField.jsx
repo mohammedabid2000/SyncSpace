@@ -7,22 +7,25 @@ const INPUT =
 
 // Label + input + error message under it.
 // Any extra prop (type, placeholder, autoComplete, maxLength, autoFocus…) goes to the <input>.
-export function TextField({ id, label, value, onChange, error, hint, ...inputProps }) {
-  // the error (or the hint) is linked to the input, so screen readers read it with the field
+export function TextField({ id, label, value, onChange, error, hint, endAdornment, ...inputProps }) {
   const describedBy = error ? `${id}-error` : hint ? `${id}-hint` : undefined;
+  const input = (
+    <input
+      id={id}
+      type="text"
+      {...inputProps}
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+      aria-invalid={error ? "true" : "false"}
+      aria-describedby={describedBy}
+      className={`${INPUT} ${endAdornment ? "ps-3 pe-10" : "px-3"}`}
+    />
+  );
+
   return (
     <div className="flex flex-col gap-1.5">
       <label htmlFor={id} className={LABEL}>{label}</label>
-      <input
-        id={id}
-        type="text"
-        {...inputProps}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        aria-invalid={error ? "true" : "false"}
-        aria-describedby={describedBy}
-        className={`${INPUT} px-3`}
-      />
+      {endAdornment ? <div className="relative">{input}{endAdornment}</div> : input}
       {hint && !error && <p id={`${id}-hint`} className="text-[13px] text-muted-foreground">{hint}</p>}
       {error && <p id={`${id}-error`} className="text-[13px] text-destructive">{error}</p>}
     </div>
@@ -30,24 +33,13 @@ export function TextField({ id, label, value, onChange, error, hint, ...inputPro
 }
 
 // Same as TextField, for passwords: adds the eye button to show / hide the password
-export function PasswordField({ id, label, value, onChange, error, hint, ...inputProps }) {
+export function PasswordField(props) {
   const [show, setShow] = useState(false);
-  const describedBy = error ? `${id}-error` : hint ? `${id}-hint` : undefined;
   return (
-    <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className={LABEL}>{label}</label>
-      <div className="relative">
-        <input
-          id={id}
-          {...inputProps}
-          type={show ? "text" : "password"}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          aria-invalid={error ? "true" : "false"}
-          aria-describedby={describedBy}
-          className={`${INPUT} ps-3 pe-10`}
-        />
-        {/* end-0: the eye sits at the end (right side) of the input */}
+    <TextField
+      {...props}
+      type={show ? "text" : "password"}
+      endAdornment={
         <button
           type="button"
           onClick={() => setShow(!show)}
@@ -56,9 +48,7 @@ export function PasswordField({ id, label, value, onChange, error, hint, ...inpu
         >
           {show ? <EyeOff className="size-4" aria-hidden="true" /> : <Eye className="size-4" aria-hidden="true" />}
         </button>
-      </div>
-      {hint && !error && <p id={`${id}-hint`} className="text-[13px] text-muted-foreground">{hint}</p>}
-      {error && <p id={`${id}-error`} className="text-[13px] text-destructive">{error}</p>}
-    </div>
+      }
+    />
   );
 }

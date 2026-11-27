@@ -1,10 +1,12 @@
-import { Globe, Cast, Link, MessagesCircle, RefreshCw, ListPlus, TvMinimalPlay, Plus, LogIn } from "lucide-react";
+import { Globe, Cast, Link, MessagesCircle, RefreshCw, ListPlus, TvMinimalPlay, Plus, LogIn, UserPlus, UserRound } from "lucide-react";
 import imghero from "./assets/hero.webp";
 import image from "./assets/image.webp";
 import startnow from "./assets/gsnow.webp";
-import { useNavigate, Link as RouterLink } from "react-router";
+import { Link as RouterLink, useNavigate } from "react-router";
 import Logo from "./components/Logo";
-import Button from "./components/Button";
+import Menu from "./components/Menu";
+import { buttonClasses } from "./components/buttonStyles";
+import "./landing.css";
 
 const features = [
   {
@@ -62,18 +64,23 @@ function FeatureGrid({ items }) {
 function App() {
   const navigate = useNavigate();
 
-  function handleClick() {
-    navigate("/signin");
-  }
   return (
     <div className="min-h-screen">
 
       <header className="mx-auto flex h-20 max-w-6xl items-center justify-between gap-4 px-6">
         <Logo size="lg" />
-        <Button size="lg" onClick={handleClick}>
-          <LogIn className="size-[18px]" aria-hidden="true" />
-          Sign in
-        </Button>
+        <Menu
+          label="Account"
+          button={
+            <span className="grid size-11 cursor-pointer place-items-center rounded-full bg-muted-foreground/10 text-muted-foreground transition-colors hover:bg-muted-foreground/20">
+              <UserRound className="size-5" aria-hidden="true" />
+            </span>
+          }
+          items={[
+            { label: "Sign in", icon: LogIn, onSelect: () => navigate("/signin") },
+            { label: "Create an account", icon: UserPlus, onSelect: () => navigate("/signup") },
+          ]}
+        />
       </header>
 
       <main className="pb-8">
@@ -89,10 +96,10 @@ function App() {
                 Start a room, invite your friends and watch videos in sync on one shared browser
               </p>
 
-              <Button size="lg" onClick={handleClick} className="mt-2">
-                <Plus className="size-[18px]" aria-hidden="true" />
+              <RouterLink to="/signin" className={buttonClasses({ size: "lg", className: "mt-2 w-[153px] px-3! whitespace-nowrap" })}>
+                <Plus className="size-[18px] shrink-0" aria-hidden="true" />
                 Start a room
-              </Button>
+              </RouterLink>
             </div>
             <div className="section-media">
               <img
@@ -165,10 +172,10 @@ function App() {
               <p className="invitation-description text-muted-foreground">
                 Bring your friends together for the next great scene
               </p>
-              <Button size="lg" onClick={handleClick}>
+              <RouterLink to="/signin" className={buttonClasses({ size: "lg" })}>
                 <TvMinimalPlay className="size-[18px]" aria-hidden="true" />
                 Get started
-              </Button>
+              </RouterLink>
             </div>
           </div>
         </section>

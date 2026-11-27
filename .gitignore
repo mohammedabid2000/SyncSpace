@@ -1,9 +1,7 @@
 .env
 node_modules
 
-# unslop skill (local only)
-unslop/
-.claude/skills/unslop/
+.claude
 
 # Generate TLS material locally; never commit private keys.
 /infra/nginx/certs/*.key

@@ -16,17 +16,17 @@ import linaPhoto from "../assets/avatars/lina.svg";
 
 // The theme colors (defined once in src/index.css → @theme)
 const COLORS = [
-  { name: "background", hex: "#F4F0E8", use: "page background" },
-  { name: "card", hex: "#FEFEFE", use: "cards, popups" },
-  { name: "secondary", hex: "#0D2434", use: "navy: text, buttons" },
-  { name: "secondary-hover", hex: "#1B3A50", use: "navy hover" },
-  { name: "primary", hex: "#DC2626", use: "logo red: one main action per screen" },
-  { name: "primary-hover", hex: "#B91C1C", use: "red hover" },
-  { name: "accent", hex: "#D5DEE8", use: "light navy: hover backgrounds" },
-  { name: "muted-foreground", hex: "#5B6B78", use: "secondary text" },
-  { name: "border", hex: "#E2DBCE", use: "every hairline: cards, dividers, menus" },
-  { name: "destructive", hex: "#B91C1C", use: "errors, remove" },
-  { name: "success", hex: "#166534", use: "online dots" },
+  { name: "background", use: "page background" },
+  { name: "card", use: "cards, popups" },
+  { name: "secondary", use: "navy: text, buttons" },
+  { name: "secondary-hover", use: "navy hover" },
+  { name: "primary", use: "logo red: one main action per screen" },
+  { name: "primary-hover", use: "red hover" },
+  { name: "accent", use: "light navy: hover backgrounds" },
+  { name: "muted-foreground", use: "secondary text" },
+  { name: "border", use: "every hairline: cards, dividers, menus" },
+  { name: "destructive", use: "errors, remove" },
+  { name: "success", use: "online dots" },
 ];
 
 const ICONS = { Plus, LogIn, Share, Settings, Trash2, UserRound, LogOut, Globe, MessagesCircle, Check, X };
@@ -43,6 +43,13 @@ function Block({ title, children }) {
 
 // Living documentation of the design system: every reusable component, shown with its variants
 function DesignSystem() {
+  const [palette] = useState(() => {
+    const theme = getComputedStyle(document.documentElement);
+    return COLORS.map((color) => ({
+      ...color,
+      value: theme.getPropertyValue(`--color-${color.name}`).trim(),
+    }));
+  });
   const [tab, setTab] = useState("one");
   const [popup, setPopup] = useState(false);
   const [toast, setToast] = useState("");
@@ -63,12 +70,12 @@ function DesignSystem() {
 
         <Block title="Colors">
           <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {COLORS.map((c) => (
+            {palette.map((c) => (
               <li key={c.name} className="flex items-center gap-3">
-                <span className="size-12 shrink-0 rounded-xl border border-border" style={{ backgroundColor: c.hex }} aria-hidden="true" />
+                <span className="size-12 shrink-0 rounded-xl border border-border" style={{ backgroundColor: c.value }} aria-hidden="true" />
                 <span className="text-sm">
                   <span className="block font-medium text-secondary">{c.name}</span>
-                  <span className="block text-muted-foreground">{c.hex} — {c.use}</span>
+                  <span className="block text-muted-foreground">{c.value.startsWith("#") ? c.value.toUpperCase() : c.value} — {c.use}</span>
                 </span>
               </li>
             ))}

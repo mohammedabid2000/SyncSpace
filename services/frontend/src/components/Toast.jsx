@@ -1,19 +1,15 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useEffectEvent } from "react";
 import { Check } from "lucide-react";
 
 // Small confirmation message at the bottom of the screen ("Profile saved").
 // It disappears by itself after 3 seconds. role="status": screen readers read it out.
 // Usage: const [toast, setToast] = useState("");  →  <Toast message={toast} onDone={() => setToast("")} />
 function Toast({ message, onDone }) {
-  // Keep the latest onDone without restarting the timer on every render
-  const onDoneRef = useRef(onDone);
-  useEffect(() => {
-    onDoneRef.current = onDone;
-  });
+  const dismiss = useEffectEvent(onDone);
 
   useEffect(() => {
     if (!message) return;
-    const timer = setTimeout(() => onDoneRef.current(), 3000);
+    const timer = setTimeout(() => dismiss(), 3000);
     return () => clearTimeout(timer); // a new message restarts the 3 seconds
   }, [message]);
 

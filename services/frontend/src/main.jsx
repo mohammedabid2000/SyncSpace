@@ -11,6 +11,8 @@ import Privacy from './Pages/Privacy.jsx'
 import Terms from './Pages/Terms.jsx'
 import NotFound from './Pages/NotFound.jsx'
 import Friends from './Pages/Friends.jsx'
+import Messages from './Pages/Messages.jsx'
+import PreviewSocialLayout from './people/PreviewSocialLayout.jsx'
 import DesignSystem from './Pages/DesignSystem.jsx'
 import OfflineBanner from './components/OfflineBanner.jsx'
 
@@ -28,9 +30,12 @@ createRoot(document.getElementById('root')).render(
         <Route path="/" element={<App />} />
         <Route path="/signin" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
-        <Route path="/home" element={<Home />} />
-        <Route path="/stream" element={<Stream />} />
-        <Route path="/friends" element={<Friends />} />
+        <Route element={<PreviewSocialLayout />}>
+          <Route path="/home" element={<Home />} />
+          <Route path="/stream" element={<Stream />} />
+          <Route path="/friends" element={<Friends />} />
+          <Route path="/messages" element={<Messages />} />
+        </Route>
         <Route path="/design-system" element={<DesignSystem />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/terms" element={<Terms />} />

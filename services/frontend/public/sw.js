@@ -8,7 +8,8 @@
 // - Everything else from our site: network first, cache as a fallback.
 // Change VERSION to throw away old caches after a big update.
 
-const VERSION = "syncspace-v1";
+const CACHE_PREFIX = "syncspace-";
+const VERSION = CACHE_PREFIX + "v1";
 const APP_SHELL = ["/", "/index.html", "/syncspace-logo.svg", "/manifest.webmanifest", "/icon-192.png", "/icon-512.png"];
 
 // 1. Install: save the app shell
@@ -20,7 +21,7 @@ self.addEventListener("install", (event) => {
 // 2. Activate: delete caches from older versions
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.filter((key) => key !== VERSION).map((key) => caches.delete(key))))
+    caches.keys().then((keys) => Promise.all(keys.filter((key) => key.startsWith(CACHE_PREFIX) && key !== VERSION).map((key) => caches.delete(key))))
   );
   self.clients.claim(); // control the pages that are already open
 });
@@ -42,22 +43,11 @@ self.addEventListener("fetch", (event) => {
   // Only our own GET requests (never the backend API, WebSockets or other sites)
   if (request.method !== "GET" || url.origin !== self.location.origin || url.pathname.startsWith("/api")) return;
 
-  if (request.mode === "navigate") {
-    // Pages: network first, offline → the app shell
-    event.respondWith(
-      fetch(request)
-        .then((response) => save("/index.html", response))
-        .catch(() => caches.match("/index.html"))
-    );
-  } else if (url.pathname.startsWith("/assets/")) {
-    // Built files: cache first
-    event.respondWith(caches.match(request).then((cached) => cached ?? fetch(request).then((r) => save(request, r))));
+  const cacheKey = request.mode === "navigate" ? "/index.html" : request;
+  const fetchAndCache = () => fetch(request).then((response) => save(cacheKey, response));
+  if (request.mode !== "navigate" && url.pathname.startsWith("/assets/")) {
+    event.respondWith(caches.match(cacheKey, { cacheName: VERSION }).then((cached) => cached ?? fetchAndCache()));
   } else {
-    // Other files: network first, cache as a fallback
-    event.respondWith(
-      fetch(request)
-        .then((response) => save(request, response))
-        .catch(() => caches.match(request))
-    );
+    event.respondWith(fetchAndCache().catch(() => caches.match(cacheKey, { cacheName: VERSION })));
   }
 });
