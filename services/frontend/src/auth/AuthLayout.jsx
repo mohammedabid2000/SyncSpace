@@ -1,10 +1,11 @@
 import AuthIllustrationPanel from "./AuthIllustrationPanel";
-import Logo from "./Logo";
+import Logo from "../components/Logo";
+import { Link } from "react-router";
 
 // Card shared by the Sign in and Sign up pages:
 // illustration on the left (desktop only), logo + title + the form (children) on the right,
 // and a quiet line under the form to switch page (footer).
-function AuthLayout({ title, subtitle, children, footer }) {
+function AuthLayout({ title, subtitle, children, footer, linkTo, linkText }) {
   return (
     <div className="flex min-h-screen items-center justify-center p-4 md:p-8">
       <div className="grid w-full max-w-5xl overflow-hidden rounded-[20px] border border-border bg-card shadow-[0_16px_48px_-16px_rgb(13_36_52/18%)] md:min-h-[44rem] md:grid-cols-2">
@@ -15,7 +16,10 @@ function AuthLayout({ title, subtitle, children, footer }) {
           <h1 className="text-center font-serif text-[40px] leading-[1.1] text-secondary md:text-5xl">{title}</h1>
           <p className="mt-3 text-center text-[15px] text-muted-foreground">{subtitle}</p>
           {children}
-          {footer && <p className="mt-6 text-center text-sm text-muted-foreground">{footer}</p>}
+          <p className="mt-6 text-center text-sm text-muted-foreground">
+            {footer}{" "}
+            <Link to={linkTo} className="font-medium text-secondary underline decoration-secondary/30 underline-offset-4 transition-colors duration-150 hover:decoration-secondary">{linkText}</Link>
+          </p>
         </div>
       </div>
     </div>

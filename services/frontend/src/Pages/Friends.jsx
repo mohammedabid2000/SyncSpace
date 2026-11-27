@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useOutletContext } from "react-router";
 import { Search, UserPlus, UserMinus, Check, X } from "lucide-react";
 import AppNav from "../components/AppNav";
 import PopUp from "../components/PopUp";
@@ -8,70 +9,54 @@ import IconButton from "../components/IconButton";
 import Card from "../components/Card";
 import StatusDot from "../components/StatusDot";
 import Toast from "../components/Toast";
-import yasserPhoto from "../assets/avatars/yasser.svg";
-import linaPhoto from "../assets/avatars/lina.svg";
-import adamPhoto from "../assets/avatars/adam.svg";
-import saraPhoto from "../assets/avatars/sara.svg";
-import omarPhoto from "../assets/avatars/omar.svg";
-import nadiaPhoto from "../assets/avatars/nadia.svg";
-import karimPhoto from "../assets/avatars/karim.svg";
-import youssefPhoto from "../assets/avatars/youssef.svg";
-import inesPhoto from "../assets/avatars/ines.svg";
-
-// TODO: replace ALL of this preview data with real data from the backend
-// (photos/online status = preview only, so the UI looks complete before the backend exists)
-const CURRENT_USER = { name: "Yasser", photo: yasserPhoto };
-const USERS = [
-  { name: "Lina", photo: linaPhoto, online: true },
-  { name: "Adam", photo: adamPhoto, online: false },
-  { name: "Sara", photo: saraPhoto, online: true },
-  { name: "Omar", photo: omarPhoto, online: false },
-  { name: "Nadia", photo: nadiaPhoto, online: true },
-  { name: "Karim", photo: karimPhoto, online: false },
-  { name: "Youssef", photo: youssefPhoto, online: true },
-  { name: "Ines", photo: inesPhoto, online: false },
-];
-const findUser = (name) => USERS.find((u) => u.name === name);
+import { users, findUser } from "../people/previewPeople";
 
 function Friends() {
-  // Names only: the details (photo, online) come from USERS
-  const [friends, setFriends] = useState(["Lina", "Adam", "Sara", "Omar"]);
-  const [requests, setRequests] = useState(["Nadia", "Karim"]); // requests other people sent YOU
-  const [sent, setSent] = useState([]);                         // requests YOU sent, still waiting
+  const { relationships, setRelationships } = useOutletContext();
   const [query, setQuery] = useState("");
 
   const [profile, setProfile] = useState(null);      // friend whose profile popup is open
   const [toRemove, setToRemove] = useState(null);    // friend waiting for "remove" confirmation
   const [toast, setToast] = useState("");            // confirmation message ("Request sent to…")
 
-  const onlineCount = friends.filter((name) => findUser(name).online).length;
+  const friends = [];
+  const requests = [];
+  for (const [name, status] of relationships) {
+    if (status === "friend") friends.push(findUser(name));
+    if (status === "incoming") requests.push(findUser(name));
+  }
+  const onlineCount = friends.filter((friend) => friend.online).length;
+  const search = query.trim().toLowerCase();
+  const results = search ? users.filter((user) => user.name.toLowerCase().includes(search)) : [];
 
-  // Search: users whose name contains what you typed (not case sensitive)
-  const results =
-    query.trim() === ""
-      ? []
-      : USERS.filter((u) => u.name.toLowerCase().includes(query.trim().toLowerCase()));
+  function updateRelationship(name, status) {
+    setRelationships((previous) => {
+      const next = new Map(previous);
+      next.delete(name);
+      if (status) next.set(name, status);
+      return next;
+    });
+  }
 
   function sendRequest(name) {
-    setSent([...sent, name]);
+    updateRelationship(name, "outgoing");
     setToast(`Request sent to ${name}`);
     // TODO: send the friend request to the backend
   }
 
   function acceptRequest(name) {
-    setRequests(requests.filter((n) => n !== name));
-    setFriends([...friends, name]);
+    updateRelationship(name, "friend");
     setToast(`You and ${name} are now friends`);
     // TODO: tell the backend the request was accepted
   }
 
   function declineRequest(name) {
-    setRequests(requests.filter((n) => n !== name));
+    updateRelationship(name, null);
     // TODO: tell the backend the request was declined
   }
 
   function confirmRemove() {
-    setFriends(friends.filter((n) => n !== toRemove));
+    updateRelationship(toRemove, null);
     setToast(`${toRemove} was removed from your friends`);
     setToRemove(null);
     setProfile(null);
@@ -80,13 +65,13 @@ function Friends() {
 
   // The right button for a search result, depending on the relationship
   function searchAction(name) {
-    if (friends.includes(name)) {
+    if (relationships.get(name) === "friend") {
       return <span className="text-sm text-muted-foreground">Friends</span>;
     }
-    if (sent.includes(name)) {
+    if (relationships.get(name) === "outgoing") {
       return <span className="text-sm text-muted-foreground">Requested</span>;
     }
-    if (requests.includes(name)) {
+    if (relationships.get(name) === "incoming") {
       return <Button size="sm" onClick={() => acceptRequest(name)}>Accept</Button>;
     }
     return (
@@ -99,7 +84,7 @@ function Friends() {
 
   return (
     <div className="min-h-screen">
-      <AppNav avatar={CURRENT_USER.photo} name={CURRENT_USER.name} />
+      <AppNav />
 
       <main className="mx-auto max-w-6xl px-4 py-8 md:px-6">
         <h1 className="text-[32px] font-medium leading-tight tracking-[-0.01em] text-secondary">Friends</h1>
@@ -121,14 +106,14 @@ function Friends() {
               <p className="mt-6 text-muted-foreground">No friends yet. Search for people to add them.</p>
             ) : (
               <ul className="mt-4 grid gap-3 sm:grid-cols-2">
-                {friends.map((name) => {
-                  const friend = findUser(name);
+                {friends.map((friend) => {
+                  const { name } = friend;
                   return (
                     <li key={name} className="flex items-center gap-3 rounded-xl border border-border p-3 transition-colors duration-150 hover:bg-background/60">
                       {/* Click the photo/name to view the profile */}
                       <button
                         type="button"
-                        onClick={() => setProfile(name)}
+                        onClick={() => setProfile(friend)}
                         className="flex min-w-0 flex-1 items-center gap-3 rounded-lg text-left focus-visible:outline-2 focus-visible:outline-ring"
                       >
                         <Avatar src={friend.photo} name={friend.name} className="size-11 text-sm" />
@@ -190,9 +175,9 @@ function Friends() {
                 <p className="mt-4 text-sm text-muted-foreground">No pending requests</p>
               ) : (
                 <ul className="mt-4 space-y-3">
-                  {requests.map((name) => (
+                  {requests.map(({ name, photo }) => (
                     <li key={name} className="flex items-center gap-3">
-                      <Avatar src={findUser(name).photo} name={name} className="size-9 text-sm" />
+                      <Avatar src={photo} name={name} className="size-9 text-sm" />
                       <span className="flex-1 truncate font-medium text-secondary">{name}</span>
                       <IconButton variant="solid" size="sm" label={`Accept ${name}'s request`} onClick={() => acceptRequest(name)}>
                         <Check className="size-4" aria-hidden="true" />
@@ -210,13 +195,13 @@ function Friends() {
       </main>
 
       {/* ===== FRIEND PROFILE POPUP ===== */}
-      <PopUp showPopUp={profile !== null} closePopUp={() => setProfile(null)} title="Profile">
+      <PopUp showPopUp={profile !== null && toRemove === null} closePopUp={() => setProfile(null)} title="Profile">
         {profile && (
           <div className="mt-5 flex flex-col items-center gap-2 text-center">
-            <Avatar src={findUser(profile).photo} name={profile} className="size-24 text-3xl" />
-            <p className="mt-2 text-xl font-medium text-secondary">{profile}</p>
-            <StatusDot online={findUser(profile).online} />
-            <Button variant="dangerOutline" onClick={() => setToRemove(profile)} className="mt-6">
+            <Avatar src={profile.photo} name={profile.name} className="size-24 text-3xl" />
+            <p className="mt-2 text-xl font-medium text-secondary">{profile.name}</p>
+            <StatusDot online={profile.online} />
+            <Button variant="dangerOutline" onClick={() => setToRemove(profile.name)} className="mt-6">
               <UserMinus className="size-4" aria-hidden="true" />
               Remove friend
             </Button>

@@ -1,4 +1,4 @@
-import Button from "./Button";
+import Button from "../components/Button";
 import GoogleIcon from "./GoogleIcon";
 
 const API_URL = (import.meta.env.VITE_API_URL || "/api").replace(/\/$/, "");
