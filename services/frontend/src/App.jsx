@@ -96,8 +96,8 @@ function App() {
                 Start a room, invite your friends and watch videos in sync on one shared browser
               </p>
 
-              <RouterLink to="/signin" className={buttonClasses({ size: "lg", className: "mt-2 w-44 whitespace-nowrap" })}>
-                <Plus className="size-[18px]" aria-hidden="true" />
+              <RouterLink to="/signin" className={buttonClasses({ size: "lg", className: "mt-2 w-[153px] px-3! whitespace-nowrap" })}>
+                <Plus className="size-[18px] shrink-0" aria-hidden="true" />
                 Start a room
               </RouterLink>
             </div>
