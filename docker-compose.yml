@@ -254,13 +254,18 @@ services:
       retries: 5
       start_period: 10s
 
-  # ---------- ORCHESTRATOR (Uncomment when Hamza creates the folder) ----------
-  # orchestrator:
-  #   build: ./services/orchestrator
-  #   container_name: syncspace-orchestrator
-  #   restart: unless-stopped
-  #   env_file: .env
-  #   volumes:
-  #     - /var/run/docker.sock:/var/run/docker.sock
-  #   networks:
-  #     - backend
+  # neko containers are created by this service through the host docker daemon.
+  orchestrator:
+    build: ./services/orchestrator
+    container_name: syncspace-orchestrator
+    restart: unless-stopped
+    environment:
+      PORT: 3100
+      ORCHESTRATOR_API_TOKEN: ${ORCHESTRATOR_API_TOKEN:-}
+      NEKO_WEBRTC_NAT1TO1: ${NEKO_WEBRTC_NAT1TO1:-127.0.0.1}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "127.0.0.1:3100:3100"
+    networks:
+      - backend
