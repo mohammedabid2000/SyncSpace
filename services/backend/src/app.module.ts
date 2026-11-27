@@ -5,12 +5,15 @@ import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { UsersModule } from './users/users.module.js';
+import { RoomsService } from './rooms/rooms.service.js';
+import { RoomsModule } from './rooms/rooms.module.js';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     PrismaModule,
     UsersModule,
+    RoomsModule,
   ],
   controllers: [AppController],
   providers: [
@@ -23,6 +26,7 @@ import { UsersModule } from './users/users.module.js';
         transform: true,
       }),
     },
+    RoomsService,
   ],
 })
 export class AppModule {}
