@@ -18,11 +18,11 @@ To ensure clean ownership boundaries and minimize merge conflicts, the project i
     *   **Responsibilities:** Builds the microservices architecture (Auth, Room, Messaging). Designs the database schema, ORM, and migrations. Manages the WebSocket messaging core for chat, cursor sync, and presence using Redis pub/sub.
     *   **Focus:** API contracts, database integrity, and real-time state management.
 
-*   **Dev 4 (Identity & Access - aelbouss): The Bouncer.**
+*   **Dev 4 (Identity & Access - nameless): The Bouncer.**
     *   **Responsibilities:** Implements JWT authentication, refresh token rotation, and password hashing. Manages RBAC (global and per-room roles) and OAuth 2.0 (42/Google/GitHub). Integrates HashiCorp Vault for secrets management.
     *   **Focus:** Security, permissions, and protecting sensitive credentials.
 
-*   **Dev 5 (DevOps): The Building Inspector & Electrician.**
+*   **Dev 5 (DevOps - Simo): The Building Inspector & Electrician.**
     *   **Responsibilities:** Manages Docker Compose orchestration, Nginx reverse proxy, and WAF/ModSecurity. Sets up the ELK stack for centralized logging and monitors overall system health.
     *   **Focus:** Infrastructure, perimeter security, and ensuring all containers communicate without crashing.
 
